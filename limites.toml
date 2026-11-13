@@ -1,0 +1,19 @@
+# Limites fixées par l’équipe support. Le programme les applique, pas le modèle.
+
+# Dossier des fiches, relatif à la racine du dépôt : rien n’est lu ni écrit ailleurs.
+dossier_fiches = "fiches"
+
+# Seule extension lue ou écrite.
+extension = ".md"
+
+# Taille maximale d’une fiche lue ou écrite, en kilo-octets.
+taille_max_ko = 20
+
+# Délai maximal d’un appel au service d’IA, en secondes.
+delai_s = 30
+
+# Nombre maximal d’appels d’outil pour une même question.
+appels_outil_max = 10
+
+# Taille maximale de la conversation envoyée au service, en jetons.
+conversation_max_jetons = 60000
