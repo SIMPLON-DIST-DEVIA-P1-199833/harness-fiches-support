@@ -191,9 +191,9 @@ Voir [Get Started](https://docs.pytest.org/en/stable/getting-started.html), [pyt
 
 ## Rattraper une étape
 
-Si tu restes bloqué·e et que tu veux commencer l’étape suivante, `python resoudre.py` termine l’étape en cours : celle dont il reste un `À faire (étape n)` dans `assistant/`. Les fichiers de code de cette étape sont remplacés par la version de référence.
+Si tu restes bloqué·e et que tu veux commencer l’étape suivante, lance `python resoudre.py`, environnement du projet activé. Des contrôles exécutés sur une copie de ton code déterminent l’étape en cours : la première dont un contrôle échoue. Le script affiche les contrôles échoués, puis te demande confirmation. Pour choisir l’étape toi-même : `python resoudre.py 3`.
 
-Ton travail est d’abord enregistré dans un commit, puis la version de référence arrive dans un second commit. Ton README et les fichiers que tu as ajoutés sont conservés. Demande le jeton d’accès au formateur.
+Ton travail est d’abord enregistré dans un commit, puis un second commit corrige les fichiers de code de l’étape avec la version de référence. Tes commits restent dans ton historique ; ton README et les fichiers que tu as ajoutés sont conservés. Demande le jeton d’accès au formateur.
 
 ## Ton assistant
 
