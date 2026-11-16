@@ -317,3 +317,5 @@ Ton travail est d’abord enregistré dans un commit, puis un second commit corr
 ## Ton assistant
 
 > À compléter au fil des étapes : installation, configuration de la clé (sans sa valeur), lancement, comportement aux limites, et comparaison de l’étape 3.
+>
+> .
