@@ -318,4 +318,44 @@ Ton travail est d’abord enregistré dans un commit, puis un second commit corr
 
 > À compléter au fil des étapes : installation, configuration de la clé (sans sa valeur), lancement, comportement aux limites, et comparaison de l’étape 3.
 >
-> .
+
+### Prerequisites
+- Tested on local with WSL - Ubuntu
+- Python >= 3.11
+- Git
+- LiteLLM key, provided by the trainer in our case
+
+### Installation
+```sh
+git clone https://github.com/gavizet/harness-fiches-support.git # clone git repo in current folder
+cd harness-fiches-support # navigate to the repository's folder
+python3 -m venv .venv # create virtual environment
+source .venv/bin/activate # activate the environment
+pip install -r requirements.txt # install the dependencies: openai, rich, python-dotenv, pytest
+```
+
+### Configuration
+Copy example template, then edit `.env`:
+
+```sh
+cp .env.example .env
+```
+
+| Variable | Required | Value |
+| --- | :---: | --- |
+| `SERVICE` | No | `litellm` (default): AI service; `simule`: simulated service, no network or quota |
+| `LITELLM_BASE_URL` | Yes | Address of the LiteLLM gateway, already filled in `.env.example` |
+| `LITELLM_API_KEY` | Yes | Personal LiteLLM key, never paste it or commit it |
+| `MODELE` | No | `gpt-luna` (default), `gpt-sol`, `claude-sonnet` or `claude-haiku` |
+
+`.env` is listed in `.gitignore`: never commit it, and NEVER paste the LiteLLM key anywhere other than `.env` file.
+
+If `LITELLM_BASE_URL` or `LITELLM_API_KEY` are missing or empty, the assistant doesn't start and prints which variable to fill in and how.
+If `MODELE` is missing, it will default to `gpt-luna`
+
+### Run
+Run from the repository's root, with the venv activated (see Installation):
+
+```sh
+python -m assistant --verifier   # checks access to the AI service, then exits or returns an error if a variable is missing
+```
