@@ -34,8 +34,8 @@ def charger_configuration():
     if service == "simule":
         return {"service": "simule", "modele": "simule"}
 
-    cle = os.getenv("LITELLM_API_KEY", "").strip()
-    url = os.getenv("LITELLM_BASE_URL", "").strip()
+    cle = os.getenv("LITELLM_API_KEY")
+    url = os.getenv("LITELLM_BASE_URL")
     modele = os.getenv("MODELE", "gpt-luna")
 
     if not cle:

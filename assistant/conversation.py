@@ -31,7 +31,7 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
     signaler(texte) affiche une opération ou un refus à l’utilisateur.
     """
-    # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
-    # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
-    # À faire (étape 4) : arrêter la question au-delà des limites.
-    raise NotImplementedError("Étape 2 : poser")
+
+    messages.append({"role": "user", "content": question})
+
+
