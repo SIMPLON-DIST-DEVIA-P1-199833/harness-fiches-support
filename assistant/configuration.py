@@ -14,6 +14,13 @@ RACINE = Path(__file__).resolve().parent.parent
 class ConfigurationInvalide(Exception):
     """La configuration ne permet pas de démarrer l’assistant."""
 
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+
+    def __str__(self):
+        return f"Configuration: {self.message}"
+
 
 # Entre deux Path, ou un Path et une chaîne, / assemble un chemin.
 def charger_limites(chemin=RACINE / "limites.toml"):
@@ -40,5 +47,5 @@ def charger_configuration():
         api_url = os.environ["LITELLM_BASE_URL"]
         model = os.environ["MODELE"]
     except KeyError as e:
-        raise ConfigurationInvalide(f"Clé manquante ({e.message})")
+        raise ConfigurationInvalide(f"Clé manquante ({e})")
     return {"service": service, "url": api_url, "cle": api_key, "modele": model}
