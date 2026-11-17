@@ -316,4 +316,52 @@ Ton travail est d’abord enregistré dans un commit, puis un second commit corr
 
 ## Ton assistant
 
+
+### Installation
+
+Le projet utilise Python et un environnement virtuel.
+
+Créer l'environnement :
+
+    python -m venv .venv
+
+Installer les dépendances avec Git Bash :
+
+    ./.venv/Scripts/python.exe -m pip install -r requirements.txt
+
+### Configuration
+
+Créer le fichier .env à partir du modèle :
+
+    cp .env.example .env
+
+Deux services sont disponibles :
+
+- SERVICE=simule : permet de tester sans utiliser de clé API.
+- SERVICE=litellm : utilise le service d'IA de l'entreprise.
+
+Pour utiliser LiteLLM, renseigner LITELLM_API_KEY dans .env.
+
+La clé est personnelle. Le fichier .env est ignoré par Git et ne doit jamais être envoyé sur GitHub.
+
+### Vérification de la connexion
+
+Exécuter :
+
+    ./.venv/Scripts/python.exe -m assistant --verifier
+
+La connexion au service simulé et au service LiteLLM a été vérifiée.
+
+### Lancement
+
+Pour démarrer l'assistant :
+
+    ./.venv/Scripts/python.exe -m assistant
+
+### Limites
+
+Les limites du programme sont définies dans limites.toml.
+L'assistant doit respecter ces limites ainsi que les restrictions d'accès aux fiches.
+
+
 > À compléter au fil des étapes : installation, configuration de la clé (sans sa valeur), lancement, comportement aux limites, et comparaison de l’étape 3.
