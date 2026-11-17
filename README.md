@@ -343,5 +343,10 @@ pip install -r requirements.txt
 Lancer un test de connectivité :
 ```sh
 python -m assistant --verifier
-``
+```
+
+Lancer un test de gestion d'erreur OpenAI :
+```sh
+py.test -k test_exception_openai_transformee
+```
 
