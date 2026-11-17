@@ -48,6 +48,7 @@ Le modèle choisit quoi lire et quoi écrire, mais une fiche ou une question peu
 
 ## Étapes
 
+
 ### 1. Accès
 
 L’assistant joint le service d’IA de l’entreprise avec ta clé, sans jamais la publier.
@@ -317,3 +318,18 @@ Ton travail est d’abord enregistré dans un commit, puis un second commit corr
 ## Ton assistant
 
 > À compléter au fil des étapes : installation, configuration de la clé (sans sa valeur), lancement, comportement aux limites, et comparaison de l’étape 3.
+
+### Installtion sur macOs
+
+### Créer et activer l'environnement virtuel
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+### Configure ta clé dans .env.
+
+Copie coller les contenu de .envexample à .env et ajouter le API_KEY
+
+### Complète charger_configuration dans assistant/configuration.py.
+
+Créer les variables pour lire LITELLM_BASE_URL,LITELLM_API_KEY et MODELE puis utiliser condition if pour verifier l'addresse et API key et bien dans .env ficher.Et si tout est bien retournez les valeurs pour ça utilisez return.
