@@ -55,10 +55,12 @@ def lancer(verifier=False):
         if not saisie:
             continue
         question = saisie
-        # À faire (étape 2) : afficher les erreurs du service sans quitter.
+        # À faire (étape 2) [fait] : afficher les erreurs du service sans quitter.
         # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
         signaler("Le service réfléchit…")
-        reponse = conversation.poser(
-            question, messages, service, configuration["modele"], limites, confirmer, signaler
-        )
-        console.print(Markdown(reponse))
+        try:
+            reponse = conversation.poser(question, messages, service, configuration["modele"], limites, confirmer, signaler)
+            console.print(Markdown(reponse))
+        except client.ServiceIndisponible as erreur:      
+            signaler(erreur)
+            continue

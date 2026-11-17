@@ -343,7 +343,25 @@ python -m assistant --verifier
 Résultat attendu : le message `accès vérifié`.
 
 ### Lancement
-À compléter après l'étape 2.
+Depuis la racine du dépôt, avec l'environnement virtuel activé :
+```sh
+python -m assistant
+```
+L'assistant affiche le modèle utilisé et l'aide, puis attend ta question. Valide avec Entrée. La conversation est conservée : une question peut renvoyer à la précédente.
+
+Commandes disponibles :
+- `/nouvelle` : repartir d'une conversation vide ;
+- `/quitter` : quitter l'assistant (`Ctrl+C` et `Ctrl+D` fonctionnent aussi).
+
+Si le service est indisponible, l'assistant affiche un message qui explique le problème, sans quitter, et accepte la question suivante.
+
+#### Essayer sans réseau
+Mets `SERVICE=simule` dans `.env`, puis pose l'une de ces questions :
+- `panne` : le service est injoignable ;
+- `lent` : le service ne répond pas dans le délai ;
+- `refus` : la clé est refusée.
+
+Pour utiliser le vrai service, retire `SERVICE=simule` de `.env` et mets `SERVICE=litellm`.
 
 ### Limites
 À compléter après l'étape 4.

@@ -30,7 +30,7 @@ def charger_configuration():
     service = os.getenv("SERVICE", "litellm")  # variable d’environnement SERVICE, sinon "litellm"
     if service == "simule":
         return {"service": "simule", "modele": "simule"}
-    # À faire (étape 1) : lire LITELLM_API_KEY, LITELLM_BASE_URL et MODELE ;
+    # À faire (étape 1) [fait] : lire LITELLM_API_KEY, LITELLM_BASE_URL et MODELE ;
     cle = os.getenv("LITELLM_API_KEY")
     url = os.getenv("LITELLM_BASE_URL")
     modele = os.getenv("MODELE")
