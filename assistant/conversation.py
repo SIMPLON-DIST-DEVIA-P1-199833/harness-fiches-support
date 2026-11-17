@@ -34,6 +34,9 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
     messages.append({"role": "user", "content": question})
     reponse_obj = client.envoyer(service, modele, messages)
-    return reponse_obj.choices[0].message.content if reponse_obj.choices else ""
+    reponse_txt = reponse_obj.choices[0].message.content if reponse_obj.choices else ""
+    messages.append({"role": "assistant", "content": reponse_txt})
+
+    return reponse_txt
     # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
     # À faire (étape 4) : arrêter la question au-delà des limites.
