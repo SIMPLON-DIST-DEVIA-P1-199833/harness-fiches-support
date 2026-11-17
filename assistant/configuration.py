@@ -18,7 +18,9 @@ class ConfigurationInvalide(Exception):
 # Entre deux Path, ou un Path et une chaîne, / assemble un chemin.
 def charger_limites(chemin=RACINE / "limites.toml"):
     """Renvoie les limites de limites.toml dans un dictionnaire."""
-    with open(chemin, "rb") as fichier:  # "rb" : lecture en binaire, demandée par tomllib
+    with open(
+        chemin, "rb"
+    ) as fichier:  # "rb" : lecture en binaire, demandée par tomllib
         limites = tomllib.load(fichier)
     limites["dossier_fiches"] = RACINE / limites["dossier_fiches"]
     return limites
@@ -27,10 +29,16 @@ def charger_limites(chemin=RACINE / "limites.toml"):
 def charger_configuration():
     """Lit .env et renvoie la configuration du service d’IA dans un dictionnaire."""
     load_dotenv(RACINE / ".env")
-    service = os.getenv("SERVICE", "litellm")  # variable d’environnement SERVICE, sinon "litellm"
+    service = os.getenv(
+        "SERVICE", "litellm"
+    )  # variable d’environnement SERVICE, sinon "litellm"
     if service == "simule":
         return {"service": "simule", "modele": "simule"}
     # À faire (étape 1) : lire LITELLM_API_KEY, LITELLM_BASE_URL et MODELE ;
-    # lever ConfigurationInvalide avec un message qui dit quoi faire si la clé ou l’adresse manque ;
-    # renvoyer {"service": "litellm", "url": ..., "cle": ..., "modele": ...}.
-    raise NotImplementedError("Étape 1 : charger_configuration")
+    try:
+        api_key = os.environ["LITELLM_API_KEY"]
+        api_url = os.environ["LITELLM_BASE_URL"]
+        model = os.environ["MODELE"]
+    except KeyError as e:
+        raise ConfigurationInvalide(f"Clé manquante ({e.message})")
+    return {"service": service, "url": api_url, "cle": api_key, "modele": model}
