@@ -316,4 +316,38 @@ Ton travail est d’abord enregistré dans un commit, puis un second commit corr
 
 ## Ton assistant
 
-> À compléter au fil des étapes : installation, configuration de la clé (sans sa valeur), lancement, comportement aux limites, et comparaison de l’étape 3.
+### Prérequis
+Environnement testé : WSL Ubuntu avec Python 3.14.
+
+### Installation
+Depuis la racine du dépôt, crée et active un environnement virtuel, puis installe les dépendances :
+```sh
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+À chaque nouveau terminal, réactive l'environnement avec `source .venv/bin/activate`.
+
+### Configuration
+1. Copie `.env.example` en `.env`, avec la commande `cp .env.example .env`
+2. Renseigne la variable `LITELLM_API_KEY` avec la clé fournie par le formateur.
+3. Vérifie les variables `LITELLM_BASE_URL` et `MODELE` : leurs valeurs par défaut sont indiquées dans `.env.example`.
+
+Le fichier `.env` contient une information sensible : ne le commite jamais et ne le partage pas.
+
+### Vérification de l'accès
+Lance la commande depuis la racine du dépôt :
+```sh
+python -m assistant --verifier
+```
+Résultat attendu : le message `accès vérifié`.
+
+### Lancement
+À compléter après l'étape 2.
+
+### Limites
+À compléter après l'étape 4.
+
+### Erreurs courantes
+- Si `LITELLM_API_KEY`, `LITELLM_BASE_URL` ou `MODELE` est absente ou vide dans `.env`, le programme affiche un message qui indique la variable à renseigner.
+- Si le service répond par une erreur 401, la clé est refusée : vérifie qu'elle est complète et sans caractère en trop, par exemple un `#`, puis relance la commande.
