@@ -30,7 +30,17 @@ def charger_configuration():
     service = os.getenv("SERVICE", "litellm")  # variable d’environnement SERVICE, sinon "litellm"
     if service == "simule":
         return {"service": "simule", "modele": "simule"}
+    url = os.getenv("LITELLM_BASE_URL")
+    if not url: 
+        raise ConfigurationInvalide("Il manque l'url server")
+    cle = os.getenv("LITELLM_API_KEY")
+    if not cle: 
+            raise ConfigurationInvalide("Il manque la clés api")
+    modele = os.getenv("MODELE")
+    if not modele: 
+            raise ConfigurationInvalide("Il manque le model")
     # À faire (étape 1) : lire LITELLM_API_KEY, LITELLM_BASE_URL et MODELE ;
     # lever ConfigurationInvalide avec un message qui dit quoi faire si la clé ou l’adresse manque ;
     # renvoyer {"service": "litellm", "url": ..., "cle": ..., "modele": ...}.
-    raise NotImplementedError("Étape 1 : charger_configuration")
+    return {"service": service, "url": url, "cle": cle, "modele": modele}
+
