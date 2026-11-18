@@ -24,12 +24,16 @@ def creer_client(configuration, limites) -> openai.OpenAI | ServiceSimule:
             "Adresse du service absente : vérifie LITELLM_BASE_URL dans .env et ce que renvoie charger_configuration."
         )
     # Arguments nommés (nom=valeur) : chacun désigne son paramètre, dans n’importe quel ordre.
-    return openai.OpenAI(
-        base_url=configuration["url"],
-        api_key=configuration["cle"],
-        timeout=limites["delai_s"],
-        max_retries=0,
-    )
+    try:
+        client = openai.OpenAI(
+            base_url=configuration["url"],
+            api_key=configuration["cle"],
+            timeout=limites["delai_s"],
+            max_retries=0,
+        )
+    except openai.AuthenticationError as e:
+        raise ConfigurationInvalide(f"Réglages client OpenAI incorrects ({e})")
+    return client
 
 
 def envoyer(

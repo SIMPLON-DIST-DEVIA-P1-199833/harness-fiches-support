@@ -34,4 +34,4 @@ jobs:
         sed -i 's/LITELLM_API_KEY=/LITELLM_API_KEY=testing-non-key/g' .env
     - name: Test with pytest
       run: |
-        pytest
+        SERVICE=simule pytest
