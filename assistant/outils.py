@@ -3,7 +3,7 @@
 import os.path
 from pathlib import Path
 
-from configuration import RACINE, Limites
+from .configuration import RACINE, Limites
 
 DEFINITIONS = [
     {
