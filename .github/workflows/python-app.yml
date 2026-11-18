@@ -28,6 +28,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Fake .env configuration
+      run: |
+        cp .env.example .env
+        sed -i 's/LITELLM_API_KEY=/LITELLM_API_KEY=testing-non-key/g' .env
     - name: Test with pytest
       run: |
         pytest
