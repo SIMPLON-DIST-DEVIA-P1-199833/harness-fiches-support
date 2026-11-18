@@ -7,10 +7,6 @@ from assistant.service_simule import ServiceSimule
 
 
 class ServiceIndisponible(Exception):
-    def __init__(self, message="") -> None:
-        super().__init__(self)
-        self.message = message
-
     """Le service n’a pas fourni de réponse utilisable."""
 
 
@@ -65,7 +61,7 @@ def envoyer(
         )
     except openai.RateLimitError as e:
         raise ServiceIndisponible(
-            f"Vos demandes sont trop fréquentes. Attendez un peu. (OpenAI RATE LIMIT error {e.status_code}: (e.response))"
+            f"Vos demandes sont trop fréquentes. Attendez un peu. (OpenAI RATE LIMIT error {e.status_code}: {e.response})"
         )
     except openai.APIStatusError as e:
         raise ServiceIndisponible(
@@ -73,7 +69,7 @@ def envoyer(
         )
     except openai.APIError as e:
         raise ServiceIndisponible(
-            "Erreur non traitée. Contactez votre administrateur. (OpenAI uncaught error: (e))"
+            f"Erreur non traitée. Contactez votre administrateur. (OpenAI uncaught error: {e})"
         )
     except Exception as e:  # noqa: BLE001
         raise ServiceIndisponible(
