@@ -3,11 +3,14 @@
 import os
 import tomllib
 from pathlib import Path
+from typing import TypedDict
 
 from dotenv import load_dotenv
 
 # __file__ : chemin de ce fichier ; resolve() le rend absolu, chaque .parent remonte d’un dossier.
 RACINE = Path(__file__).resolve().parent.parent
+
+Limites = TypedDict('Limites', {"dossier_fiches": str, "extension": str, "taille_max_ko": int, "delai_s": int, "appels_outils_max": int, "conversations_max_jetons": int})
 
 
 # Exception propre au projet : raise ConfigurationInvalide("message"), puis except ConfigurationInvalide.
@@ -23,14 +26,14 @@ class ConfigurationInvalide(Exception):
 
 
 # Entre deux Path, ou un Path et une chaîne, / assemble un chemin.
-def charger_limites(chemin=RACINE / "limites.toml"):
+def charger_limites(chemin=RACINE / "limites.toml") -> Limites:
     """Renvoie les limites de limites.toml dans un dictionnaire."""
     with open(
         chemin, "rb"
     ) as fichier:  # "rb" : lecture en binaire, demandée par tomllib
         limites = tomllib.load(fichier)
     limites["dossier_fiches"] = RACINE / limites["dossier_fiches"]
-    return limites
+    return limites # pyright: ignore[reportReturnType]
 
 
 def charger_configuration():
