@@ -3,7 +3,11 @@ import pytest
 from assistant import conversation
 from assistant.service_simule import ServiceSimule, texte
 
+# Have to import this since exceptions are handled in the outil module
+from assistant.outils import AccesRefuse
 
+
+# TEST: poser()
 def refuser(nom):
     return False
 
@@ -19,3 +23,21 @@ def test_valid_get_model_response(limites):
         "Bonjour", messages, service, "simule", limites, refuser, ignorer
     )
     assert reponse == "Bonjour, que puis-je faire ?"
+
+
+# TEST: joindre_fiche()
+# This essentially checks that joindre_fiche() goes through lire_fiche() correctly
+def test_valid_joindre_fiche(limites):
+    result = conversation.joindre_fiche(
+        "modifier-taux-tva.md", "Résume cette fiche.", limites
+    )
+    assert result.split("\n")[0] == "Résume cette fiche."
+    assert "modifier-taux-tva.md" in result
+    assert "# Modifier le taux de TVA" in result
+
+
+def test_fail_joindre_fiche_outside_folder(limites, tmp_path):
+    path = tmp_path / ".env.md"
+    path.write_text("LITELLM_API_KEY=my_secret_key", encoding="utf-8")
+    with pytest.raises(AccesRefuse):
+        conversation.joindre_fiche("../.env.md", "Résume cette fiche", limites)
