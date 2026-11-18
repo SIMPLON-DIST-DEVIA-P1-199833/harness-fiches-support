@@ -28,12 +28,26 @@ def creer_client(configuration, limites):
 
 def envoyer(client, modele, messages, outils=None):
     """Envoie les messages au service et renvoie sa réponse, ou lève ServiceIndisponible."""
-    # À faire (étape 2) : transformer chaque erreur du service en ServiceIndisponible,
-    # avec un message qui dit à l’utilisateur ce qui se passe et quoi faire.
-    if outils:
-        reponse = client.chat.completions.create(model=modele, messages=messages, tools=outils)
-    else:
-        reponse = client.chat.completions.create(model=modele, messages=messages)
+    # Chaque erreur du SDK devient une ServiceIndisponible, avec un message pour l’utilisateur.
+    try:
+        if outils:
+            reponse = client.chat.completions.create(model=modele, messages=messages, tools=outils)
+        else:
+            reponse = client.chat.completions.create(model=modele, messages=messages)
+    except openai.AuthenticationError:
+        raise ServiceIndisponible("Clé refusée par la passerelle : vérifie LITELLM_API_KEY dans .env.")
+    except openai.APITimeoutError:
+        raise ServiceIndisponible("Le service n’a pas répondu dans le délai fixé. Tu peux renvoyer ta demande.")
+    except openai.APIConnectionError:
+        raise ServiceIndisponible("Service injoignable : vérifie LITELLM_BASE_URL et ta connexion.")
+    except openai.RateLimitError:
+        raise ServiceIndisponible("Quota de ta clé atteint ou trop de demandes : réessaie plus tard.")
+    except openai.InternalServerError as erreur:
+        raise ServiceIndisponible(f"Service indisponible (erreur {erreur.status_code}) : réessaie plus tard.")
+    except openai.APIStatusError as erreur:
+        raise ServiceIndisponible(f"Le service a refusé la demande : {erreur.message}")
+    if not reponse.choices:
+        raise ServiceIndisponible("Réponse invalide du service : aucun message.")
     return reponse
 
 
