@@ -105,10 +105,10 @@ Supprimer le fichier ne suffit pas : la clé reste dans l’historique. Préveni
 
 Le technicien enchaîne les questions pendant un même appel, et une panne du service ne lui fait pas perdre l’assistant.
 
-1. Complète `poser` dans `assistant/conversation.py` : envoie la conversation au service et garde l’historique.
-2. Dans `assistant/client.py`, transforme chaque erreur du service en `ServiceIndisponible`.
-3. Dans `assistant/interface.py`, affiche ces erreurs sans quitter.
-4. Essaie avec `SERVICE=simule` les questions `panne`, `lent` et `refus`.
+1. [x] Complète `poser` dans `assistant/conversation.py` : envoie la conversation au service et garde l’historique.
+2. [x] Dans `assistant/client.py`, transforme chaque erreur du service en `ServiceIndisponible`.
+3. [x] Dans `assistant/interface.py`, affiche ces erreurs sans quitter.
+4. [x] Essaie avec `SERVICE=simule` les questions `panne`, `lent` et `refus`.
 
 **Résultat :**
 
