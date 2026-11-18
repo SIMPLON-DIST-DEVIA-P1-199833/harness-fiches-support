@@ -88,3 +88,11 @@ def test_fail_read_fiche_outside_folder(limites, tmp_path):
 def test_fail_read_fiche_doesnt_exist(limites):
     with pytest.raises(AccesRefuse):
         lire_fiche("test.md", limites)
+
+
+def test_fail_read_fiche_not_utf8(limites):
+    # A fiche saved in Latin-1 encoding instead of UTF-8
+    fiche = limites["dossier_fiches"] / "latin1.md"
+    fiche.write_text("Facture modifiée", encoding="latin-1")
+    with pytest.raises(AccesRefuse):
+        lire_fiche("latin1.md", limites)

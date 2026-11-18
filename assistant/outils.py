@@ -68,8 +68,25 @@ def chemin_autorise(nom, limites):
 
 def lire_fiche(nom, limites):
     """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
-    # À faire (étape 3) : contrôler le chemin et la taille, puis lire la fiche.
-    raise NotImplementedError("Étape 3 : lire_fiche")
+    path = chemin_autorise(nom, limites)
+    if not path.is_file():
+        raise AccesRefuse(
+            f"Access refused - {nom!r} was not found or is not a valid file"
+        )
+    # Size of file in bytes
+    file_size = path.stat().st_size
+    max_size = limites["taille_max_ko"] * 1000
+    if file_size > max_size:
+        raise AccesRefuse(
+            f"Access refused - File size is too big by {file_size - max_size} bytes. You are limited to {limites['taille_max_ko']}ko."
+        )
+    try:
+        fiche = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as error:
+        raise AccesRefuse("Access refused - File is not valid utf-8") from error
+    except OSError as error:
+        raise AccesRefuse("Access refused - File could not be opened") from error
+    return fiche
 
 
 def ecrire_fiche(nom, contenu, limites, confirmer):
