@@ -85,6 +85,8 @@ class ServiceSimule:
         self._appels = 0
 
     def _creer(self, model, messages, tools=None, **options):
+        if not messages:
+            raise RuntimeError("Service simulé : messages vides (OpenAI STATUS error).")
         # Comme le SDK, accepte les messages du modèle tels que reçus, sans conversion en dictionnaire.
         messages = [m.model_dump(exclude_none=True) if hasattr(m, "model_dump") else m for m in messages]
         self.requetes.append({"messages": copy.deepcopy(messages), "tools": tools})

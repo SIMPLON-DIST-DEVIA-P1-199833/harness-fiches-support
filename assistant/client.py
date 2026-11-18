@@ -72,8 +72,9 @@ def envoyer(
             f"Erreur non traitée. Contactez votre administrateur. (OpenAI uncaught error: {e})"
         )
     except Exception as e:  # noqa: BLE001
+        import traceback
         raise ServiceIndisponible(
-            f"Erreur non prévue. Contactez votre administrateur. (An unexpected error occurred: {e})"
+            f"Erreur non prévue. Contactez votre administrateur. (An unexpected error occurred: {e} {traceback.format_exc()})"
         )
 
     return reponse
