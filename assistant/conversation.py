@@ -31,13 +31,10 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
     signaler(texte) affiche une opération ou un refus à l’utilisateur.
     """
-
     messages.append({"role": "user", "content": question})
     reponse = client.envoyer(service, modele, messages)
-    texte = reponse.choices[0].message.content
+    texte = reponse.choices[0].message.content or ""  # content vaut None sans texte : or "" donne alors ""
     messages.append({"role": "assistant", "content": texte})
-    return texte 
-
-
-
-
+    # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
+    # À faire (étape 4) : arrêter la question au-delà des limites.
+    return texte
