@@ -29,6 +29,20 @@ def test_fail_empty_name_path(limites):
         chemin_autorise("", limites)
 
 
+def test_fail_not_a_string_path(limites):
+    with pytest.raises(AccesRefuse):
+        chemin_autorise(5, limites)
+
+
+def test_fail_subfolder_path(limites):
+    subfolder = limites["dossier_fiches"] / "subfolder"
+    subfolder.mkdir()
+    path = subfolder / "test_fiche.md"
+    path.write_text("# Test Fiche", encoding="utf-8")
+    with pytest.raises(AccesRefuse):
+        chemin_autorise("subfolder/test_fiche.md", limites)
+
+
 def test_fail_symbolic_link_outside_folder(limites, tmp_path):
     # See: https://docs.python.org/fr/3/library/pathlib.html#pathlib.Path.symlink_to
     outside_fiche = tmp_path / "protected_file.md"

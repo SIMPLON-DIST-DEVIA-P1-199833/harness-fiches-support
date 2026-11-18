@@ -10,7 +10,12 @@ DEFINITIONS = [
             "description": "Lit une fiche de procédure et renvoie son contenu Markdown.",
             "parameters": {
                 "type": "object",
-                "properties": {"nom": {"type": "string", "description": "Nom du fichier, par exemple modifier-taux-tva.md"}},
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "description": "Nom du fichier, par exemple modifier-taux-tva.md",
+                    }
+                },
                 "required": ["nom"],
             },
         },
@@ -26,14 +31,35 @@ class AccesRefuse(Exception):
 def lister_fiches(limites):
     """Renvoie les noms des fiches du dossier, triés."""
     # Comme une compréhension de liste, sans crochets : sorted reçoit directement chaque nom.
-    return sorted(chemin.name for chemin in Path(limites["dossier_fiches"]).glob("*" + limites["extension"]))
+    return sorted(
+        chemin.name
+        for chemin in Path(limites["dossier_fiches"]).glob("*" + limites["extension"])
+    )
 
 
 def chemin_autorise(nom, limites):
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
-    # À faire (étape 3) : refuser tout chemin hors du dossier, y compris par .., chemin absolu
-    # ou lien symbolique, et toute autre extension que celle des limites.
-    raise NotImplementedError("Étape 3 : chemin_autorise")
+    # See: https://docs.python.org/fr/3/library/pathlib.html#pathlib.Path.resolve gives absolute path
+    try:
+        if not isinstance(nom, str) or not nom:
+            raise AccesRefuse(
+                f"Access refused - {nom} is not a valid type (str) or name"
+            )
+        folder = Path(limites["dossier_fiches"]).resolve()
+        path = (folder / nom).resolve()
+        if not path.is_relative_to(folder):
+            raise AccesRefuse(f"Acces refused - {nom} outside of the fiches folder")
+        # Subfolders not authorized
+        if path.parent != folder:
+            raise AccesRefuse("Access refused - Subfolders are not allowed")
+        if path.suffix != limites["extension"]:
+            raise AccesRefuse(
+                f"Access refused - only {limites['extension']} files are valid"
+            )
+    # Catch all in case we are passed bullshit in the name
+    except ValueError as error:
+        raise AccesRefuse("Access refused - not a valid name :)") from error
+    return path
 
 
 def lire_fiche(nom, limites):
