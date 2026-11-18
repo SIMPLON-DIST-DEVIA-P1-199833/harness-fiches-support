@@ -35,12 +35,28 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
 
     messages.append({"role": "user", "content": question})
 
-    reponse = client.envoyer(service, modele, messages)
+    while True:
+        reponse = client.envoyer(service, modele, messages, outils=outils.DEFINITIONS)
+        message = reponse.choices[0].message
 
-    texte = reponse.choices[0].message.content
+        messages.append(message.model_dump(exclude_none=True))
 
-    messages.append({"role": "assistant", "content": texte})
+        if not message.tool_calls:
+            return message.content or ""
 
-    return texte
+        for appel in message.tool_calls:
+            signaler(f"Appel de l’outil : {appel.function.name}")
 
-   
+            try:
+                resultat = outils.executer(appel, limites, confirmer)
+            except outils.AccesRefuse as erreur:
+                resultat = f"Accès refusé : {erreur}"
+                signaler(resultat)
+
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": appel.id,
+                    "content": resultat,
+                }
+            )
