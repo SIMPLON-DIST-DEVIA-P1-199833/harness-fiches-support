@@ -1,6 +1,7 @@
 """Cœur de l’assistant : la conversation et la boucle des appels d’outil."""
 
 from assistant import client, outils
+import json
 
 CONSIGNES = """Tu es l’assistant de l’équipe support de Batifact, éditeur d’un logiciel de facturation pour artisans.
 Réponds en français, brièvement, à partir des fiches de procédure, et cite la fiche utilisée.
@@ -25,7 +26,7 @@ def joindre_fiche(nom, question, limites):
     raise NotImplementedError("Étape 3 : joindre_fiche")
 
 
-def poser(question, messages, service, modele, limites, confirmer, signaler):
+def poser(question, messages, service, modele, limites, confirmer, signaler) -> str:
     """Ajoute la question aux messages, exécute les appels d’outil et renvoie la réponse du modèle.
 
     confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
@@ -33,8 +34,12 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     """
     # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
     messages.append({"role": "user", "content": question})
-    reponse_obj = client.envoyer(service, modele, messages)
-    reponse_txt = reponse_obj.choices[0].message.content if reponse_obj.choices else ""
+    reponse_txt = ""
+    reponse_obj = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+    if tool_calls := reponse_obj.choices[0].message.tool_calls:
+        reponse_txt = outils.executer(tool_calls[0], limites, confirmer)
+    if not reponse_txt:
+        reponse_txt = str(reponse_obj.choices[0].message.content)
     messages.append({"role": "assistant", "content": reponse_txt})
 
     return reponse_txt

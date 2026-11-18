@@ -4,8 +4,12 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.prompt import Prompt
 
-from assistant import client, conversation
-from assistant.configuration import ConfigurationInvalide, charger_configuration, charger_limites
+from assistant import client, conversation, outils
+from assistant.configuration import (
+    ConfigurationInvalide,
+    charger_configuration,
+    charger_limites,
+)
 
 AIDE = """Pose ta question, puis valide avec Entrée.
 /joindre <fiche.md> <question> : joindre une fiche à ta question
@@ -55,8 +59,8 @@ def lancer(verifier=False):
         if not saisie:
             continue
         question = saisie
-        # À faire (étape 2) : afficher les erreurs du service sans quitter.
-        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
+        # FAIT À faire (étape 2) : afficher les erreurs du service sans quitter.
+        # FAIT À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
         signaler("Le service réfléchit…")
         try:
             reponse = conversation.poser(
@@ -64,5 +68,8 @@ def lancer(verifier=False):
             )
             console.print(Markdown(reponse))
         except client.ServiceIndisponible as si:
-            reponse = f"Le service est indisponible ({si.message})"
+            reponse = f"Le service est indisponible ({si})"
             console.print(Markdown(reponse), style="red on white")
+        except outils.AccesRefuse as ar:
+            reponse = f"Accès refusé ({ar.message})"
+            console.print(Markdown(reponse), style="blue on white")
