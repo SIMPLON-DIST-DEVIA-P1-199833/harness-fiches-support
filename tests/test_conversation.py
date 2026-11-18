@@ -1,12 +1,22 @@
 import pytest
 
-from assistant.service_simule import ServiceSimule 
-from assistant import conversation
+from assistant import client, conversation
+from assistant.service_simule import ServiceSimule, texte
 
-def test_renvoie_la_reponse_du_modele():
+def refuser(nom):
+  return False
+
+def ignorer(texte):
+  pass
+
+def test_renvoie_la_reponse_du_modele(limites):
   # utiliser la fonction poser
-  reponse = conversation.poser()
+  service = ServiceSimule([texte("Bonjour, que puis-je faire ?")])
+  messages = conversation.nouvelle_conversation(limites)
+  reponse = conversation.poser(
+    "Bonjour", messages, service, "simule", limites, refuser, ignorer
+  )
   # test pour envoie de message
   # verification reception
-  assert "bonjour" == reponse 
-   
+  
+  assert reponse == "Bonjour, que puis-je faire ?" 
