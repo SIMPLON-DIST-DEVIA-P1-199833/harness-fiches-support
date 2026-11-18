@@ -326,7 +326,7 @@ cp .env.example .env
 
 Y insérer la clé API:
 ```ini
-LITELLM_API_KEY=[clé API]
+LITELLM_API_KEY="clé API ici"
 ```
 
 Le fichier `.env` doit bien être ignoré par git. (cf. [.gitignore](.gitignore)].

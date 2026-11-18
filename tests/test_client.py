@@ -1,6 +1,6 @@
 import pytest
 
-from assistant.client import creer_client, envoyer, ServiceIndisponible
+from assistant.client import ServiceIndisponible, creer_client, envoyer
 from assistant.configuration import charger_configuration
 
 

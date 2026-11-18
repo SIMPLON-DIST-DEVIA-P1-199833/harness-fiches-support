@@ -7,10 +7,14 @@ from assistant.service_simule import ServiceSimule
 
 
 class ServiceIndisponible(Exception):
+    def __init__(self, message="") -> None:
+        super().__init__(self)
+        self.message = message
+
     """Le service n’a pas fourni de réponse utilisable."""
 
 
-def creer_client(configuration, limites):
+def creer_client(configuration, limites) -> openai.OpenAI | ServiceSimule:
     """Renvoie le client du service choisi dans la configuration."""
     if configuration["service"] == "simule":
         return ServiceSimule()
@@ -28,7 +32,12 @@ def creer_client(configuration, limites):
     )
 
 
-def envoyer(client, modele, messages, outils=None):
+def envoyer(
+    client: openai.OpenAI | ServiceSimule,
+    modele: str,
+    messages: list,
+    outils: None | list = None,
+):
     """Envoie les messages au service et renvoie sa réponse, ou lève ServiceIndisponible."""
     # À faire (étape 2) : transformer chaque erreur du service en ServiceIndisponible,
     # avec un message qui dit à l’utilisateur ce qui se passe et quoi faire.
@@ -42,6 +51,10 @@ def envoyer(client, modele, messages, outils=None):
         else:
             reponse = client.chat.completions.create(model=modele, messages=messages)
     # Exception catching grasped from https://community.openai.com/t/how-to-do-exception-testing-since-the-update/564474/2
+    except openai.APITimeoutError as e:
+        raise ServiceIndisponible(
+            f"Serveur trop lent à répondre. Réessayer plus tard. ({e.message})"
+        )
     except openai.APIConnectionError as e:
         raise ServiceIndisponible(
             f"Pensez à revoir vos réglages de connexion au serveur (.env). (Server connection error: {e.message})"
@@ -58,7 +71,7 @@ def envoyer(client, modele, messages, outils=None):
         raise ServiceIndisponible(
             "Erreur non traitée. Contactez votre administrateur. (OpenAI uncaught error: (e))"
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise ServiceIndisponible(
             f"Erreur non prévue. Contactez votre administrateur. (An unexpected error occurred: {e})"
         )
