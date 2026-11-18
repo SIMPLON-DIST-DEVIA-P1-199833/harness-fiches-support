@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@latest
+    - uses: actions/checkout@v7
     - name: Set up Python 3.11 (required for tomllib)
-      uses: actions/setup-python@latest
+      uses: actions/setup-python@v7
       with:
         python-version: "3.11"
     - name: Install dependencies
