@@ -33,5 +33,11 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     """
 
     messages.append({"role": "user", "content": question})
+    reponse = client.envoyer(service, modele, messages)
+    texte = reponse.choices[0].message.content
+    messages.append({"role": "assistant", "content": texte})
+    return texte 
+
+
 
 
