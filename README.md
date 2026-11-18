@@ -359,4 +359,5 @@ Run from the repository's root, with the venv activated (see Installation):
 ```sh
 python3 -m assistant --verifier   # checks access to the AI service, then exits or returns an error if a variable is missing
 python3 -m assistant # start the CLI assistant
+python3 -m pytest # launch all tests
 ```
