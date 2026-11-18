@@ -1,0 +1,21 @@
+import pytest
+
+from assistant import conversation
+from assistant.service_simule import ServiceSimule, texte
+
+
+def refuser(nom):
+    return False
+
+
+def ignorer(texte):
+    pass
+
+
+def test_valid_get_model_response(limites):
+    service = ServiceSimule([texte("Bonjour, que puis-je faire ?")])
+    messages = conversation.nouvelle_conversation(limites)
+    reponse = conversation.poser(
+        "Bonjour", messages, service, "simule", limites, refuser, ignorer
+    )
+    assert reponse == "Bonjour, que puis-je faire ?"

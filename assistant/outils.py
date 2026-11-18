@@ -37,6 +37,10 @@ def lister_fiches(limites):
     )
 
 
+# See : https://www.stephane-robert.info/docs/developper/programmation/python/pathlib/#normaliser-avec-resolve
+# More readable than official python doc
+
+
 def chemin_autorise(nom, limites):
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
     # See: https://docs.python.org/fr/3/library/pathlib.html#pathlib.Path.resolve gives absolute path
