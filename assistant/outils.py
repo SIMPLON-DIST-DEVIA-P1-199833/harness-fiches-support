@@ -31,15 +31,23 @@ def lister_fiches(limites):
 
 def chemin_autorise(nom, limites):
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
-    # À faire (étape 3) : refuser tout chemin hors du dossier, y compris par .., chemin absolu
-    # ou lien symbolique, et toute autre extension que celle des limites.
-    raise NotImplementedError("Étape 3 : chemin_autorise")
+    dossier = Path(limites["dossier_fiches"]).resolve()
+    chemin = (dossier / nom).resolve()
+    if not chemin.is_relative_to(dossier):
+        raise AccesRefuse(f"Refusé : {nom} est hors du dossier des fiches.")
+    if chemin.suffix != limites["extension"]:
+        raise AccesRefuse(f"Refusé : {nom} n’est pas un fichier {limites['extension']}.")
+    return chemin
 
 
 def lire_fiche(nom, limites):
     """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
-    # À faire (étape 3) : contrôler le chemin et la taille, puis lire la fiche.
-    raise NotImplementedError("Étape 3 : lire_fiche")
+    chemin = chemin_autorise(nom, limites)
+    if not chemin.is_file():
+        raise AccesRefuse(f"Refusé : la fiche {nom} n’existe pas.")
+    if chemin.stat().st_size > limites["taille_max_ko"] * 1024:
+        raise AccesRefuse(f"Refusé : {nom} dépasse {limites['taille_max_ko']} Ko.")
+    return chemin.read_text(encoding="utf-8")
 
 
 def ecrire_fiche(nom, contenu, limites, confirmer):
