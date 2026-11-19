@@ -21,7 +21,7 @@ def nouvelle_conversation(limites):
 
 def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
-    # All exceptions handled downstream in lire_fiche() and chemin_autorise()
+    # All exceptions raised downstream in lire_fiche() and chemin_autorise()
     fiche = outils.lire_fiche(nom, limites)
     # splits on '\n' in service_simule.py, so question is first
     return f"{question}\nAttached fiche: {nom}\n{fiche}"
@@ -41,5 +41,6 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     messages.append(question_msg)
     messages.append({"role": "assistant", "content": response_text})
     return response_text
+    # role user requete, role tool sortie
     # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
     # À faire (étape 4) : arrêter la question au-delà des limites.
