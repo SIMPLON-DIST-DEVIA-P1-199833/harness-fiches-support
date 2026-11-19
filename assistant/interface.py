@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.prompt import Prompt
 
-from assistant import client, conversation
+from assistant import client, conversation, outils
 from assistant.configuration import ConfigurationInvalide, charger_configuration, charger_limites
 
 AIDE = """Pose ta question, puis valide avec Entrée.
@@ -59,7 +59,16 @@ def lancer(verifier=False):
         if not saisie:
             continue
         question = saisie
-        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
+        if saisie.startswith("/joindre"):
+            morceaux = saisie.split(maxsplit=2)
+            if len(morceaux) < 3:
+                console.print("Usage : /joindre <fiche.md> <question>")
+                continue
+            try:
+                question = conversation.joindre_fiche(morceaux[1], morceaux[2], limites)
+            except outils.AccesRefuse as refus:
+                signaler(str(refus))
+                continue
         try:
             signaler("Le service réfléchit…")
             reponse = conversation.poser(
