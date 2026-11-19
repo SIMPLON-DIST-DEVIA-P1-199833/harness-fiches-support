@@ -21,8 +21,10 @@ def nouvelle_conversation(limites):
 
 def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
-    # À faire (étape 3).
-    raise NotImplementedError("Étape 3 : joindre_fiche")
+    # À faire (étape 3)[fait]
+    contenu = outils.lire_fiche(nom, limites)
+    return f"La question de l'user: {question} \n\n Le nom de la fiche jointe: {nom} \n\n Le contenu de la fiche: {contenu}"
+
 
 
 def poser(question, messages, service, modele, limites, confirmer, signaler):

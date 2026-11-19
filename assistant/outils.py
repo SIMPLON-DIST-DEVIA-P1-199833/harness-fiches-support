@@ -31,16 +31,28 @@ def lister_fiches(limites):
 
 def chemin_autorise(nom, limites):
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
-    # À faire (étape 3) : refuser tout chemin hors du dossier, y compris par .., chemin absolu
+    # À faire (étape 3)[fait] : refuser tout chemin hors du dossier, y compris par .., chemin absolu
     # ou lien symbolique, et toute autre extension que celle des limites.
-    raise NotImplementedError("Étape 3 : chemin_autorise")
+    dossier = limites["dossier_fiches"].resolve()
+    extension = limites["extension"]
+    chemin = (dossier/nom).resolve()
+    if not chemin.is_relative_to(dossier) :
+        raise AccesRefuse("La fiche doit être dans le dossier autorisé") # Je choisis de ne pas indiquer le dossier pour raison de sécurite
+    if extension != chemin.suffix : # Je choisis d'être strict de respecter la casse .MD ne passe pas
+        raise AccesRefuse(f"La fiche doit être en extension {extension}") # Je choisis d'indiquer l'extension si jamais extension change dans limites.
+    return chemin
 
 
 def lire_fiche(nom, limites):
     """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
-    # À faire (étape 3) : contrôler le chemin et la taille, puis lire la fiche.
-    raise NotImplementedError("Étape 3 : lire_fiche")
-
+    # À faire (étape 3) [fait] : contrôler le chemin et la taille, puis lire la fiche.
+    chemin = chemin_autorise(nom, limites)
+    if not chemin.is_file() :
+        raise AccesRefuse(f"La fiche {nom} n'existe pas")
+    if chemin.stat().st_size > limites["taille_max_ko"]*1024 :
+        raise AccesRefuse(f"La fiche depasse la taille maximale de {limites["taille_max_ko"]}Ko")
+    contenu = chemin.read_text(encoding="utf-8")
+    return contenu
 
 def ecrire_fiche(nom, contenu, limites, confirmer):
     """Enregistre la fiche ; confirmer(nom) décide d’un écrasement. Lève AccesRefuse sinon."""
