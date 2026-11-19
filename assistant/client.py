@@ -40,14 +40,6 @@ def envoyer(client, modele, messages, outils=None):
         else:
             reponse = client.chat.completions.create(model=modele, messages=messages)
         return reponse
-    except openai.AuthenticationError:
-        raise ServiceIndisponible("Clé refusée: Vérifie LITELLM_API_KEY dans .env")
-
-    except openai.APITimeoutError:
-        raise ServiceIndisponible(
-            "Le service met trop de temps à répondre. Réessaie plus tard."
-        )
-
     except openai.APIConnectionError:
         raise ServiceIndisponible(
             "Connexion au service impossible. Réessaie plus tard."

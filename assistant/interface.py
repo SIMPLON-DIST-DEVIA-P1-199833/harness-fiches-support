@@ -5,11 +5,7 @@ from rich.markdown import Markdown
 from rich.prompt import Prompt
 
 from assistant import client, conversation
-from assistant.configuration import (
-    ConfigurationInvalide,
-    charger_configuration,
-    charger_limites,
-)
+from assistant.configuration import ConfigurationInvalide, charger_configuration, charger_limites
 
 AIDE = """Pose ta question, puis valide avec Entrée.
 /joindre <fiche.md> <question> : joindre une fiche à ta question
@@ -36,9 +32,7 @@ def lancer(verifier=False):
         configuration = charger_configuration()
         limites = charger_limites()
         service = client.creer_client(configuration, limites)
-    except (
-        ConfigurationInvalide
-    ) as erreur:  # erreur : l’exception levée ; l’afficher donne son message
+    except ConfigurationInvalide as erreur:  # erreur : l’exception levée ; l’afficher donne son message
         console.print(f"Erreur : {erreur}")
         return 1
     if verifier:
@@ -46,22 +40,12 @@ def lancer(verifier=False):
         return 0
 
     messages = conversation.nouvelle_conversation(limites)
-    console.print(
-        f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}"
-    )
+    console.print(f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}")
     while True:
         try:
             saisie = Prompt.ask("\nToi").strip()
         except (EOFError, KeyboardInterrupt):  # l’une ou l’autre : Ctrl+D ou Ctrl+C
             return 0
-        if saisie == "/joindre":
-           parties = saisie.split(maxsplit=2)
-
-           if len(parties) <3:
-               signaler("Utilisation : /joindre <fiche.md> <question>")
-               continue
-           nom = parties[1]
-           question = parties[2]
         if saisie == "/quitter":
             return 0
         if saisie == "/nouvelle":
@@ -71,21 +55,10 @@ def lancer(verifier=False):
         if not saisie:
             continue
         question = saisie
-
+        # À faire (étape 2) : afficher les erreurs du service sans quitter.
+        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
         signaler("Le service réfléchit…")
-
-        try:
-            reponse = conversation.poser(
-                question,
-                messages,
-                service,
-                configuration["modele"],
-                limites,
-                confirmer,
-                signaler,
-            )
-
-        except client.ServiceIndisponible as erreur:
-            signaler(str(erreur))
-            continue
+        reponse = conversation.poser(
+            question, messages, service, configuration["modele"], limites, confirmer, signaler
+        )
         console.print(Markdown(reponse))
