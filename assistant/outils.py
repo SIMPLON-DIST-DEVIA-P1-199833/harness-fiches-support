@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+
 DEFINITIONS = [
     {
         "type": "function",
@@ -28,23 +29,49 @@ def lister_fiches(limites):
     # Comme une compréhension de liste, sans crochets : sorted reçoit directement chaque nom.
     return sorted(chemin.name for chemin in Path(limites["dossier_fiches"]).glob("*" + limites["extension"]))
 
-
+#############################################
 def chemin_autorise(nom, limites):
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
     # À faire (étape 3) : refuser tout chemin hors du dossier, y compris par .., chemin absolu
     # ou lien symbolique, et toute autre extension que celle des limites.
 
-    dossier = limites["dossier_fiches"]
-    dossier = dossier.resolve()
+    dossier = Path(limites["dossier_fiches"]).resolve()
+    nom = Path(nom)
+
+    #refus des chemins absolus et les ".."
+    if nom.is_absolute() or ".." in nom.parts:
+        raise AccesRefuse("chemin non autorisé.")
+
+    #vérification de l'exention
+    if nom.suffix != limites["extension"]:
+        raise AccesRefuse("Extension non autorisée.")
+
+    #refuse des liens symboliques
+    courant = dossier
+    for partie in nom.parts:
+        courant = courant / partie
+        if courant.is_symlink():
+            raise AccesRefuse("lien symbolique interdit")
+
+    #si le chemin est bien dans le soddier
     chemin = (dossier / nom).resolve()
 
     if not chemin.is_relative_to(dossier):
-        raise AccesRefuse("Accès refusé : fichier hors du dossier autorisé.")
+        raise AccesRefuse(
+            "Accès refusé : fichier hors du dossier autorisé")
 
+    return chemin
+
+#################################
 
 def lire_fiche(nom, limites):
     """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
     # À faire (étape 3) : contrôler le chemin et la taille, puis lire la fiche.
+
+    chemin = chemin_autorise(nom, limites)
+
+    max_octets =  limites["taille_max_ko"]
+    
     raise NotImplementedError("Étape 3 : lire_fiche")
 
 
