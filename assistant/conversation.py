@@ -23,6 +23,7 @@ def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
     # À faire (étape 3).
     contenu = outils.lire_fiche(nom, limites)
+    
     return f"{question}\n\nFiche :{nom}\n{contenu}"
 
 

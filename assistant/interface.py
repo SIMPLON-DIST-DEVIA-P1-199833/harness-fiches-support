@@ -54,6 +54,14 @@ def lancer(verifier=False):
             saisie = Prompt.ask("\nToi").strip()
         except (EOFError, KeyboardInterrupt):  # l’une ou l’autre : Ctrl+D ou Ctrl+C
             return 0
+        if saisie == "/joindre":
+           parties = saisie.split(maxsplit=2)
+
+           if len(parties) <3:
+               signaler("Utilisation : /joindre <fiche.md> <question>")
+               continue
+           nom = parties[1]
+           question = parties[2]
         if saisie == "/quitter":
             return 0
         if saisie == "/nouvelle":
