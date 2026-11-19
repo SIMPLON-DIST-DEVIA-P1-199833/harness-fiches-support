@@ -44,7 +44,6 @@ Le modèle choisit quoi lire et quoi écrire, mais une fiche ou une question peu
 | 20 Ko par fiche | Une fiche fait environ 1 Ko ; au-delà, elle consomme du quota et encombre la conversation | Lecture ou écriture refusée, jamais tronquée : une procédure coupée perd des étapes |
 | 30 s par appel au service | Le technicien est au téléphone avec un client | Question abandonnée avec un message, sans nouvelle tentative ; la conversation continue |
 | 10 appels d’outil par question | Un modèle peut tourner en boucle, et chaque appel renvoie toute la conversation | Question arrêtée avec un message ; la conversation continue |
-| 60 000 jetons de conversation | Chaque appel renvoie toute la conversation : elle coûte de plus en plus cher et finit par dépasser ce que le modèle accepte | La conversation repart de zéro, avec un message |
 
 ## Étapes
 
@@ -171,7 +170,6 @@ Le technicien joint lui-même une fiche à sa question, ou laisse l’assistant 
 2. Ajoute la commande `/joindre <fiche.md> <question>` et complète `joindre_fiche`. Essaie `/joindre facture-non-recue.md Résume cette fiche en trois lignes.`
 3. Complète `executer`, puis fais exécuter par `poser` les appels d’outil du modèle jusqu’à sa réponse finale. Essaie la question sur la TVA du scénario.
 4. Avec `SERVICE=simule`, vérifie les refus de ton programme : `/joindre ../.env.md Résume-la.` puis `lis ../.env.md`.
-5. Dans [Ton assistant](#ton-assistant), compare `/joindre` et `lire_fiche` en quelques lignes.
 
 > [!WARNING]
 > Tant que ces refus ne sont pas vérifiés, essaie toute lecture hors du dossier avec `SERVICE=simule` uniquement. Si ton contrôle laisse passer `.env`, son contenu part au service d’IA avec ta clé, et le formateur doit la révoquer.
@@ -191,7 +189,7 @@ Tes tests de lecture réussissent avec `python -m pytest`.
 <details>
 <summary>Indice : appel d’outil</summary>
 
-Voir [Function calling](https://platform.openai.com/docs/guides/function-calling), onglet **Chat Completions**. Le trajet :
+Voir [l’exemple complet de Function calling en Chat Completions](https://developers.openai.com/api/docs/guides/function-calling?api-mode=chat#function-tool-example). Le trajet :
 
 1. tu envoies la conversation avec la description des outils (`tools`) ;
 2. le modèle répond par des `tool_calls` : nom de l’outil et arguments en JSON ;
@@ -234,9 +232,8 @@ Voir [Get Started](https://docs.pytest.org/en/stable/getting-started.html), [pyt
 Le technicien fait rédiger le brouillon d’une fiche manquante, et aucune fiche existante n’est écrasée sans son accord. Les lignes 4 à 6 du [scénario de démonstration](docs/scenario-demonstration.md) que tu présenteras vendredi en donnent les demandes exactes.
 
 1. Décris l’outil `ecrire_fiche`, puis complète `ecrire_fiche` et `confirmer`. Écris les tests de création et d’écrasement refusé.
-2. Dans `poser`, arrête la question au-delà du nombre d’appels d’outil, et repars de zéro au-delà de la taille de conversation, chaque fois avec un message.
+2. Dans `poser`, arrête la question au-delà du nombre d’appels d’outil, avec un message.
 3. Essaie avec `SERVICE=simule` : `écris <fiche.md>`, puis `boucle`.
-4. Pour essayer la taille de conversation, baisse `conversation_max_jetons` à 300 dans `limites.toml` et enchaîne quelques questions avec `SERVICE=simule`. Remets 60000 avant ton commit.
 
 **Résultat :**
 
@@ -252,10 +249,6 @@ Le technicien fait rédiger le brouillon d’une fiche manquante, et aucune fich
 > **quand** le technicien pose la question `boucle`,<br>
 > **alors** la question s’arrête au nombre d’appels fixé avec un message, et l’assistant accepte la question suivante.
 
-> **Étant donné** `conversation_max_jetons = 300` et `SERVICE=simule`,<br>
-> **quand** le technicien enchaîne quelques questions,<br>
-> **alors** un message annonce que la conversation repart de zéro.
-
 Tes tests de création et d’écrasement refusé réussissent.
 
 <details>
@@ -268,9 +261,7 @@ C’est ton code qui demande la confirmation, pas le modèle. Voir [`Confirm.ask
 <details>
 <summary>Indice : limites</summary>
 
-Compter les appels d’outil d’une même question. Pour la taille de la conversation, chaque réponse du service indique les jetons consommés dans `usage.total_tokens`.
-
-Pour la tester, fixer `limites["conversation_max_jetons"]` à une petite valeur dans le test, puis vérifier le message et la conversation qui repart de zéro.
+Compter les appels d’outil d’une même question.
 
 </details>
 
@@ -278,7 +269,7 @@ Pour la tester, fixer `limites["conversation_max_jetons"]` à une petite valeur 
 
 Vendredi, tu présentes ton assistant à Nadia Ferrand, responsable du support, et tes tests montrent qu’il tient ses limites.
 
-1. Complète tes tests avec le service simulé : conversation, appel d’outil, écriture par le modèle, arrêt au nombre d’appels, panne du service.
+1. Ajoute à tes tests de l’atelier pytest un test d’arrêt au nombre d’appels d’outil, avec le service simulé.
 2. Répète le [scénario de démonstration](docs/scenario-demonstration.md) sur un dépôt propre.
 
 **Résultat :**
@@ -287,7 +278,7 @@ Vendredi, tu présentes ton assistant à Nadia Ferrand, responsable du support, 
 > **quand** tu lances `python -m pytest`,<br>
 > **alors** tous les tests réussissent.
 
-Avec ceux des étapes 3 et 4, tes tests couvrent la lecture, le refus hors dossier, l’écriture, la confirmation, la conversation, l’arrêt au nombre d’appels et la panne du service.
+Avec ceux de l’atelier pytest et des étapes 3 et 4, tes tests couvrent la lecture, le refus hors dossier, l’écriture, la confirmation, la conversation, l’arrêt au nombre d’appels et la panne du service.
 
 <details>
 <summary>Indice : tester avec le service simulé</summary>
@@ -303,11 +294,12 @@ service = ServiceSimule([
 ])
 ```
 
-`service.requetes` garde ensuite les messages reçus à chaque appel.
-
 </details>
 
-**Bonus :** afficher les différences avant un écrasement ([`difflib`](https://docs.python.org/fr/3/library/difflib.html)).
+**Bonus :**
+
+- Afficher les différences avant un écrasement ([`difflib.unified_diff`](https://docs.python.org/fr/3/library/difflib.html#difflib.unified_diff)).
+- Au-delà de `conversation_max_jetons` de [`limites.toml`](limites.toml), faire repartir la conversation de zéro avec un message. Chaque appel renvoie toute la conversation : elle coûte de plus en plus cher et finit par dépasser ce que le modèle accepte. Chaque réponse du service indique les jetons consommés dans `usage.total_tokens`.
 
 ## Rattraper une étape
 
