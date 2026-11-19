@@ -41,6 +41,15 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     messages.append(question_msg)
     messages.append({"role": "assistant", "content": response_text})
     return response_text
+    """
+    messages.append(
+        {
+            "role": "tool",
+            "tool_call_id": tool_call.id,
+            "content": json.dumps({"horoscope": horoscope}),
+        }
+    )
+    """
     # role user requete, role tool sortie
     # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
     # À faire (étape 4) : arrêter la question au-delà des limites.

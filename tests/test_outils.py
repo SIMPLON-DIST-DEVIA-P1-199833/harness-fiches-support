@@ -1,9 +1,15 @@
 import pytest
 
-from assistant.outils import AccesRefuse, lire_fiche, chemin_autorise
+# Used to test executer()
+# See: https://docs.python.org/fr/3/library/types.html#types.SimpleNamespace
+# Essentially creates an empty object we can give attributes to
+# This way you don't need to declare a Class yourself
+from types import SimpleNamespace
+
+from assistant.outils import AccesRefuse, lire_fiche, chemin_autorise, executer
 
 
-# TESTS: assistant.outils.chemin_autorise()
+# TESTS: chemin_autorise()
 def test_valid_authorized_path(limites):
     path = chemin_autorise("modifier-taux-tva.md", limites)
     assert path == limites["dossier_fiches"].resolve() / "modifier-taux-tva.md"
@@ -53,7 +59,7 @@ def test_fail_symbolic_link_outside_folder(limites, tmp_path):
         chemin_autorise("its_a_trap.md", limites)
 
 
-# TESTS: assistant.outils.lire_fiche()
+# TESTS: lire_fiche()
 def test_valid_read_fiche(limites):
     fiche = lire_fiche("modifier-taux-tva.md", limites)
     assert "# Modifier le taux de TVA" in fiche
@@ -96,3 +102,57 @@ def test_fail_read_fiche_not_utf8(limites):
     fiche.write_text("Facture modifiée", encoding="latin-1")
     with pytest.raises(AccesRefuse):
         lire_fiche("latin1.md", limites)
+
+
+# TESTS: executer()
+def fake_tool_call(name, args):
+    """Build object with same shape as a tool call from the SDK
+    call.function.name
+    call.function.arguments
+    """
+    return SimpleNamespace(function=SimpleNamespace(name=name, arguments=args))
+
+
+def test_valid_executer_lire_fiche(limites):
+    call = fake_tool_call("lire_fiche", '{"nom": "modifier-taux-tva.md"}')
+    assert "# Modifier le taux de TVA" in executer(call, limites, None)
+
+
+def test_fail_executer_invalid_json(limites):
+    call = fake_tool_call("lire_fiche", '{"nom": ')
+    with pytest.raises(AccesRefuse):
+        executer(call, limites, None)
+
+
+def test_fail_executer_invalid_type(limites):
+    call = fake_tool_call("lire_fiche", "[]")
+    with pytest.raises(AccesRefuse):
+        executer(call, limites, None)
+
+
+def test_fail_executer_none_type(limites):
+    call = fake_tool_call("lire_fiche", None)
+    with pytest.raises(AccesRefuse):
+        executer(call, limites, None)
+
+
+def test_fail_executer_unknown_tool(limites):
+    call = fake_tool_call("delete_fiche", '{"nom": "modifier-taux-tva.md"}')
+    with pytest.raises(AccesRefuse):
+        executer(call, limites, None)
+
+
+def test_fail_executer_empty_args(limites):
+    call = fake_tool_call("lire_fiche", "{}")
+    with pytest.raises(AccesRefuse):
+        executer(call, limites, None)
+
+
+# Same test as in test_conversation.test_fail_joindre_fiche_outside_folder()
+# Makes sure that executer() goes through lire_fiche()
+def test_fail_executer_outside_folder(limites, tmp_path):
+    path = tmp_path / ".env.md"
+    path.write_text("LITELLM_API_KEY=my_secret_key", encoding="utf-8")
+    call = fake_tool_call("lire_fiche", '{"nom": "../.env.md"}')
+    with pytest.raises(AccesRefuse):
+        executer(call, limites, None)

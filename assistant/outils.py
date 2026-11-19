@@ -1,5 +1,7 @@
 """Outils proposés au modèle : lire et écrire une fiche, dans les limites fixées."""
 
+import json
+
 from pathlib import Path
 
 DEFINITIONS = [
@@ -95,8 +97,22 @@ def ecrire_fiche(nom, contenu, limites, confirmer):
     raise NotImplementedError("Étape 4 : ecrire_fiche")
 
 
-def executer(appel, limites, confirmer):
+def executer(call, limites, confirmer):
     """Exécute un appel d’outil du modèle et renvoie le texte de son résultat, ou lève AccesRefuse."""
-    # À faire (étape 3) : lire les arguments JSON de appel.function.arguments,
-    # puis lancer l’outil nommé appel.function.name ; tout appel invalide est refusé.
-    raise NotImplementedError("Étape 3 : executer")
+    try:
+        # Args written by the model, follow schema for parameters in DEFINITIONS
+        args = json.loads(call.function.arguments)
+    # Need TypeError, otherwise a test with None (not string) as args would pass for example. See test_fail_executer_none_type()
+    except (json.JSONDecodeError, TypeError) as error:
+        raise AccesRefuse("Access refused - Invalid JSON arguments") from error
+    if not isinstance(args, dict):
+        raise AccesRefuse("Access refused - arguments should be a JSON object")
+    fiche_name = args.get("nom")
+    # Name of the tool call
+    func_name = call.function.name
+    if func_name != "lire_fiche":
+        raise AccesRefuse(f"Access refused - {func_name} is an unknown tool call")
+    if fiche_name is None:
+        raise AccesRefuse("Access refused - Missing argument 'nom'")
+    result = lire_fiche(fiche_name, limites)
+    return result
