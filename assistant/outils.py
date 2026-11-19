@@ -33,7 +33,13 @@ def chemin_autorise(nom, limites):
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
     # À faire (étape 3) : refuser tout chemin hors du dossier, y compris par .., chemin absolu
     # ou lien symbolique, et toute autre extension que celle des limites.
-    raise NotImplementedError("Étape 3 : chemin_autorise")
+
+    dossier = limites["dossier_fiches"]
+    dossier = dossier.resolve()
+    chemin = (dossier / nom).resolve()
+
+    if not chemin.is_relative_to(dossier):
+        raise AccesRefuse("Accès refusé : fichier hors du dossier autorisé.")
 
 
 def lire_fiche(nom, limites):
