@@ -40,6 +40,9 @@ def envoyer(client, modele, messages, outils=None):
         else:
             reponse = client.chat.completions.create(model=modele, messages=messages)
         return reponse
+    except openai.APITimeoutError:
+        raise ServiceIndisponible("Service trop lent. Réssayer plus tard.")
+
     except openai.APIConnectionError:
         raise ServiceIndisponible(
             "Connexion au service impossible. Réessaie plus tard."
