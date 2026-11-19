@@ -21,8 +21,10 @@ def nouvelle_conversation(limites):
 
 def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
-    # À faire (étape 3).
-    raise NotImplementedError("Étape 3 : joindre_fiche")
+    # All exceptions raised downstream in lire_fiche() and chemin_autorise()
+    fiche = outils.lire_fiche(nom, limites)
+    # splits on '\n' in service_simule.py, so question is first
+    return f"{question}\nAttached fiche: {nom}\n{fiche}"
 
 
 def poser(question, messages, service, modele, limites, confirmer, signaler):
@@ -31,7 +33,23 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
     signaler(texte) affiche une opération ou un refus à l’utilisateur.
     """
-    # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
+    question_msg = {"role": "user", "content": question}
+    # Create shallow list copy on function call
+    # Only modify history if no exception is raised and we got a response
+    response = client.envoyer(service, modele, messages + [question_msg])
+    response_text = response.choices[0].message.content
+    messages.append(question_msg)
+    messages.append({"role": "assistant", "content": response_text})
+    return response_text
+    """
+    messages.append(
+        {
+            "role": "tool",
+            "tool_call_id": tool_call.id,
+            "content": json.dumps({"horoscope": horoscope}),
+        }
+    )
+    """
+    # role user requete, role tool sortie
     # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
     # À faire (étape 4) : arrêter la question au-delà des limites.
-    raise NotImplementedError("Étape 2 : poser")
