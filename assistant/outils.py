@@ -44,6 +44,8 @@ DEFINITIONS = [
         },
     },
 ]
+# Adding this so if we add other tools later, conditions in executer() would still work
+KNOWN_TOOLS = {definition["function"]["name"] for definition in DEFINITIONS}
 
 
 class AccesRefuse(Exception):
@@ -61,15 +63,13 @@ def lister_fiches(limites):
 
 # See : https://www.stephane-robert.info/docs/developper/programmation/python/pathlib/#normaliser-avec-resolve
 # More readable than official python doc
-
-
 def chemin_autorise(nom, limites):
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
     # See: https://docs.python.org/fr/3/library/pathlib.html#pathlib.Path.resolve gives absolute path
     try:
         if not isinstance(nom, str) or not nom:
             raise AccesRefuse(
-                f"Access refused - {nom} is not a valid type (str) or name"
+                f"Access refused - {nom!r} is not a valid type (str) or name"
             )
         folder = Path(limites["dossier_fiches"]).resolve()
         path = (folder / nom).resolve()
@@ -88,6 +88,15 @@ def chemin_autorise(nom, limites):
     return path
 
 
+def _check_file_size(size, limites):
+    """Raise AccesRefuse if size (in bytes) is above the fiche size limit."""
+    max_size = limites["taille_max_ko"] * 1000
+    if size > max_size:
+        raise AccesRefuse(
+            f"Access refused - File size is too big by {size - max_size} bytes. You are limited to {limites['taille_max_ko']}ko."
+        )
+
+
 def lire_fiche(nom, limites):
     """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
     path = chemin_autorise(nom, limites)
@@ -97,11 +106,7 @@ def lire_fiche(nom, limites):
         )
     # Size of file in bytes
     file_size = path.stat().st_size
-    max_size = limites["taille_max_ko"] * 1000
-    if file_size > max_size:
-        raise AccesRefuse(
-            f"Access refused - File size is too big by {file_size - max_size} bytes. You are limited to {limites['taille_max_ko']}ko."
-        )
+    _check_file_size(file_size, limites)
     try:
         fiche = path.read_text(encoding="utf-8")
     except UnicodeDecodeError as error:
@@ -119,13 +124,9 @@ def ecrire_fiche(nom, contenu, limites, confirmer):
         raise AccesRefuse(
             f"Access refused - Content to add inside the fiche should be of type str, it is {type(contenu)}"
         )
-    # Size of file in bytes
+    # Size of content in bytes
     content_size = len(contenu.encode("utf-8"))
-    max_size = limites["taille_max_ko"] * 1000
-    if content_size > max_size:
-        raise AccesRefuse(
-            f"Access refused - File size is too big by {content_size - max_size} bytes. You are limited to {limites['taille_max_ko']}ko."
-        )
+    _check_file_size(content_size, limites)
     # Check if fiche existed before write
     path_existed = path.is_file()
     # Tests if fiche existed and THEN tests if technician confirmed the write
@@ -138,12 +139,11 @@ def ecrire_fiche(nom, contenu, limites, confirmer):
     # Covers any disk write failures
     except OSError as error:
         raise AccesRefuse(f"Access refused - {nom!r} could not be written") from error
-    # modify if already exists, create otherwise
     return f"{nom} overwritten" if path_existed else f"{nom} created"
 
 
-def executer(call, limites, confirmer):
-    """Exécute un appel d’outil du modèle et renvoie le texte de son résultat, ou lève AccesRefuse."""
+def _parse_arguments(call):
+    """Return the tool call arguments as a dict, or raise AccesRefuse."""
     try:
         # Args written by the model, follow schema for parameters in DEFINITIONS
         args = json.loads(call.function.arguments)
@@ -152,12 +152,33 @@ def executer(call, limites, confirmer):
         raise AccesRefuse("Access refused - Invalid JSON arguments") from error
     if not isinstance(args, dict):
         raise AccesRefuse("Access refused - arguments should be a JSON object")
-    fiche_name = args.get("nom")
-    # Name of the tool call
+    return args
+
+
+def _check_required_arg(args, name):
+    """Return args[name], or raise AccesRefuse if model did not send it."""
+    my_arg = args.get(name)
+    if my_arg is None:
+        raise AccesRefuse(f"Access refused - Missing argument {name!r}")
+    return my_arg
+
+
+def executer(call, limites, confirmer):
+    """Exécute un appel d’outil du modèle et renvoie le texte de son résultat, ou lève AccesRefuse."""
+    args = _parse_arguments(call)
     func_name = call.function.name
-    if func_name != "lire_fiche":
+    # See constant KNOWN_TOOLS declared at top of file
+    if func_name not in KNOWN_TOOLS:
         raise AccesRefuse(f"Access refused - {func_name} is an unknown tool call")
-    if fiche_name is None:
-        raise AccesRefuse("Access refused - Missing argument 'nom'")
-    result = lire_fiche(fiche_name, limites)
+    fiche_name = _check_required_arg(args, "nom")
+    if func_name == "lire_fiche":
+        result = lire_fiche(fiche_name, limites)
+    elif func_name == "ecrire_fiche":
+        content = _check_required_arg(args, "contenu")
+        result = ecrire_fiche(fiche_name, content, limites, confirmer)
+    # Handle any tool we added in DEFINITION that was not implemented yet
+    else:
+        raise AccesRefuse(
+            f"Access refused - {func_name} tool call is described in DEFINITIONS but not implemented yet"
+        )
     return result
