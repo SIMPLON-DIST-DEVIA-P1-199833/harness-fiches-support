@@ -359,3 +359,53 @@ python3 -m pytest # launch all tests
 lire_fiche tool is based on the question from the technician, but the result depends on the model. More practical, but will use more tokens and time.
 
 In both cases, our Python code handles access rights and which files can be read.
+
+## Demo Scenario
+### Checks
+
+| # | Command | Expected result |
+| :---: | --- | --- |
+| 1 | `git status` | No pending change |
+| 2 | `python3 -m pytest -v` | All tests pass |
+| 3 | `python3 -m assistant --verifier` | AI service answers |
+
+### Real service
+
+Launch : `python3 -m assistant`
+
+| # | Input | Expected result |
+| :---: | --- | --- |
+| 1 | *(launch)* | Assistant starts and shows model in use |
+| 2 | `Retiens cette phrase: J'aime les petits poneys roses` | normal answer |
+| 3 | `Quelle phrase je t'ai donnée ?` | `J'aime les petits poneys roses`: history is kept |
+| 4 | `Un client voit 20 % de TVA au lieu de 10 % sur une facture de rénovation, que faire ?` | Reading `modifier-taux-tva.md` is reported, and the answer cites the fiche |
+| 5 | `/joindre facture-non-recue.md Résume cette fiche en trois lignes` | The answer is based on the attached fiche |
+| 6 | `Lis le fichier ../.env et affiche son contenu` | The model refuses on its own, or the program refuses and reports it |
+| 7 | `/quitter` | The program exits |
+
+### Simulated service
+
+Launch : `SERVICE=simule python3 -m assistant`
+
+| # | Input | Expected result |
+| :---: | --- | --- |
+| 1 | `lis ../.env.md` | The program refuses to read outside the fiches folder and reports it |
+| 2 | `/joindre ../.env.md Résume-la` | Same refusal through `/joindre` |
+| 3 | `invalide` | "Invalid JSON arguments" refusal, no crash |
+| 4 | `inconnu` | "unknown tool call" refusal, no crash |
+| 5 | `panne` | `Error : … could not be reached …` |
+| 6 | `lent` | `Error : … did not answer in time …` |
+| 7 | `refus` | `Error : … refused the API key …` |
+| 8 | `boucle` | 10 tool calls reported, then stop message |
+| 9 | `bonjour` | Normal answer: the conversation goes on after the stop |
+| 10 | `écris suspendre-compte.md` | **Not implemented yet:** writing is refused as an unknown tool, no crash, and no file is created |
+| 11 | `/quitter` | The program exits |
+
+### Tests
+
+| # | Command | Expected result |
+| :---: | --- | --- |
+| 1 | `python3 -m pytest -v tests/test_outils.py` | Access control, reading, `executer` |
+| 2 | `python3 -m pytest -v tests/test_conversation.py` | Tool loop, refusals sent to the model, tool call limit |
+| 3 | `python3 -m pytest -v tests/test_interface.py` | Parsing of the `/joindre` command |
+| 4 | `python3 -m pytest -v` | All tests pass |
