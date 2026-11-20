@@ -35,27 +35,47 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     """
     # À faire (étape 2) [fait] : envoyer la conversation avec client.envoyer et garder l’historique.
     # À faire (étape 3) [fait] : exécuter les appels d’outil du modèle jusqu’à sa réponse finale. 
-    messages.append({"role": "user", "content": question})
-    reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)
-    message = reponse.choices[0].message
-    while message.tool_calls :
-        messages.append(message)
-        for appel in message.tool_calls:
-            signaler(f"Lecture en cours...")
-            try:
-                resultat = outils.executer(appel, limites, confirmer)
-            except outils.AccesRefuse as erreur:
-                signaler(f"Refusé : {erreur}")
-                resultat = str(erreur)
-            messages.append({
-                "role": "tool",
-                "tool_call_id": appel.id,       
-                "content": resultat,            
-            })
-        reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)    
-        message = reponse.choices[0].message                    
-    texte = reponse.choices[0].message.content
+    # À faire (étape 4)[fait] : arrêter la question au-delà des limites.
+    taille_initiale = len(messages)
+    appels = 0
+
+    try: 
+        messages.append({"role": "user", "content": question})
+        reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+        message = reponse.choices[0].message
+
+        while message.tool_calls :
+            appels += len(message.tool_calls)
+            if appels > limites["appels_outil_max"]:
+                del messages[taille_initiale:]
+                return "Question arrêtée : trop d'appels d'outil. Reformule ou pose une autre question."
+            messages.append(message)
+
+            for appel in message.tool_calls:
+
+                if appel.function.name == "ecrire_fiche":
+                    signaler("Écriture en cours...")
+                else:
+                    signaler("Lecture en cours...")
+
+                try:
+                    resultat = outils.executer(appel, limites, confirmer)
+                except outils.AccesRefuse as erreur:
+                    signaler(f"Refusé : {erreur}")
+                    resultat = str(erreur)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": appel.id,       
+                    "content": resultat,            
+                })
+            
+            reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)    
+            message = reponse.choices[0].message
+    
+    except Exception:
+        del messages[taille_initiale:]
+        raise
+    
+    texte = message.content
     messages.append({"role": "assistant","content": texte})
     return texte
-    
-    # À faire (étape 4) : arrêter la question au-delà des limites.

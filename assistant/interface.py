@@ -2,7 +2,7 @@
 
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.prompt import Prompt
+from rich.prompt import Confirm, Prompt
 
 from assistant import client, conversation, outils
 from assistant.configuration import ConfigurationInvalide, charger_configuration, charger_limites
@@ -17,8 +17,8 @@ console = Console()
 
 def confirmer(nom):
     """Demande à l’utilisateur s’il accepte d’écraser la fiche."""
-    # À faire (étape 4).
-    raise NotImplementedError("Étape 4 : confirmer")
+    # À faire (étape 4) [fait].
+    return Confirm.ask(f"La fiche {nom} existe déjà. L’écraser ?", default=False)
 
 
 def signaler(texte):

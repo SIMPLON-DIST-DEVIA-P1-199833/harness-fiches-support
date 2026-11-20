@@ -344,6 +344,7 @@ L'assistant affiche le modèle utilisé et l'aide, puis attend ta question. Vali
 Commandes disponibles :
 - `/nouvelle` : repartir d'une conversation vide ;
 - `/quitter` : quitter l'assistant (`Ctrl+C` et `Ctrl+D` fonctionnent aussi).
+- `/joindre <fiche.md> <question>` : joindre une fiche à ta question ;
 
 Si le service est indisponible, l'assistant affiche un message qui explique le problème, sans quitter, et accepte la question suivante.
 
@@ -352,11 +353,25 @@ Mets `SERVICE=simule` dans `.env`, puis pose l'une de ces questions :
 - `panne` : le service est injoignable ;
 - `lent` : le service ne répond pas dans le délai ;
 - `refus` : la clé est refusée.
+- `lis ../.env.md` : lecture hors du dossier, refusée par le programme ;
+- `écris <fiche.md>` : écriture d'une fiche (confirmation si elle existe déjà) ;
+- `boucle` : le modèle enchaîne les appels d'outil jusqu'à la limite.
 
+Pour tester le refus avant tout envoi : `/joindre ../.env.md Résume-la.`
 Pour utiliser le vrai service, retire `SERVICE=simule` de `.env` et mets `SERVICE=litellm`.
 
 ### Limites
-À compléter après l'étape 4.
+Le modèle choisit quoi lire et quoi écrire, mais c'est le code Python qui applique les limites de `limites.toml` :
+
+| Limite | Valeur | Au-delà |
+| --- | --- | --- |
+| Dossier des fiches | `fiches/` | Lecture ou écriture refusée, avec un message |
+| Extension | `.md` (casse stricte : `.MD` est refusé) | Refusée, avec un message |
+| Taille d'une fiche | 20 Ko | Lecture ou écriture refusée, jamais tronquée |
+| Délai d'un appel au service | 30 s | Question abandonnée avec un message, sans nouvelle tentative ; la conversation continue |
+| Appels d'outil par question | 10 | Question arrêtée avec un message ; la conversation continue |
+
+Une fiche existante n'est jamais écrasée sans ta confirmation : un refus laisse la fiche intacte. Un refus de l'outil est renvoyé au modèle, qui l'explique dans sa réponse.
 
 ### Erreurs courantes
 - Si `LITELLM_API_KEY`, `LITELLM_BASE_URL` ou `MODELE` est absente ou vide dans `.env`, le programme affiche un message qui indique la variable à renseigner.
