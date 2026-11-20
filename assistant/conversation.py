@@ -21,8 +21,8 @@ def nouvelle_conversation(limites):
 
 def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
-    # À faire (étape 3).
-    raise NotImplementedError("Étape 3 : joindre_fiche")
+    contenu = outils.lire_fiche(nom, limites)
+    return f"{question}\n Fiche jointe {nom} :\n{contenu}"
 
 
 def poser(question, messages, service, modele, limites, confirmer, signaler):
@@ -31,7 +31,10 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
     signaler(texte) affiche une opération ou un refus à l’utilisateur.
     """
-    # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
+    messages.append({"role": "user", "content": question})
+    reponse = client.envoyer(service, modele, messages)
+    texte = reponse.choices[0].message.content or ""  # content vaut None sans texte : or "" donne alors ""
+    messages.append({"role": "assistant", "content": texte})
     # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
     # À faire (étape 4) : arrêter la question au-delà des limites.
-    raise NotImplementedError("Étape 2 : poser")
+    return texte

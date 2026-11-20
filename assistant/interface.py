@@ -36,7 +36,11 @@ def lancer(verifier=False):
         console.print(f"Erreur : {erreur}")
         return 1
     if verifier:
-        console.print(client.verifier_acces(service, configuration["modele"]))
+        try:
+            console.print(client.verifier_acces(service, configuration["modele"]))
+        except client.ServiceIndisponible as erreur:
+            console.print(f"Erreur : {erreur}")
+            return 1
         return 0
 
     messages = conversation.nouvelle_conversation(limites)
@@ -55,10 +59,24 @@ def lancer(verifier=False):
         if not saisie:
             continue
         question = saisie
-        # À faire (étape 2) : afficher les erreurs du service sans quitter.
-        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
-        signaler("Le service réfléchit…")
-        reponse = conversation.poser(
-            question, messages, service, configuration["modele"], limites, confirmer, signaler
-        )
+        if saisie.startswith("/joindre"):
+            morceaux = saisie.split(maxsplit=2)
+            if len(morceaux) < 3:
+                console.print("Usage: /joindre <fiche.md> < question>")
+                continue
+
+            try:
+                question = conversation.joindre_fiche(morceaux[1], morceaux[2], limites)
+            except outils.AccesRefuse as refus:
+                signaler(refus)
+                continue
+
+        try:
+            signaler("Le service réfléchit…")
+            reponse = conversation.poser(
+                question, messages, service, configuration["modele"], limites, confirmer, signaler
+            )
+        except client.ServiceIndisponible as erreur:
+            console.print(f"Erreur : {erreur}")
+            continue
         console.print(Markdown(reponse))
