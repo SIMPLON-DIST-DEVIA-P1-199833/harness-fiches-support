@@ -26,15 +26,26 @@ def joindre_fiche(nom, question, limites):
 
 
 def poser(question, messages, service, modele, limites, confirmer, signaler):
-    """Ajoute la question aux messages, exécute les appels d’outil et renvoie la réponse du modèle.
-
-    confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
-    signaler(texte) affiche une opération ou un refus à l’utilisateur.
-    """
+    """Ajoute la question aux messages, exécute les appels d’outil et renvoie la réponse du modèle."""
     messages.append({"role": "user", "content": question})
-    reponse = client.envoyer(service, modele, messages)
-    texte = reponse.choices[0].message.content or ""  # content vaut None sans texte : or "" donne alors ""
-    messages.append({"role": "assistant", "content": texte})
-    # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
-    # À faire (étape 4) : arrêter la question au-delà des limites.
-    return texte
+    while True:
+        reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+        message = reponse.choices[0].message
+        messages.append(message.model_dump(exclude_none=True))  # objet du SDK converti en dictionnaire
+        if not message.tool_calls:
+            return message.content or ""  # content vaut None sans texte : or "" donne alors ""
+        # À faire (étape 4) : arrêter la question au-delà du nombre d’appels d’outil fixé.
+        for appel in message.tool_calls:
+            resultat = executer_et_signaler(appel, limites, confirmer, signaler)
+            messages.append({"role": "tool", "tool_call_id": appel.id, "content": resultat})
+
+
+def executer_et_signaler(appel, limites, confirmer, signaler):
+    """Exécute un appel d’outil, signale l’opération à l’utilisateur et renvoie le résultat pour le modèle."""
+    try:
+        resultat = outils.executer(appel, limites, confirmer)
+    except outils.AccesRefuse as refus:
+        signaler(str(refus))
+        return str(refus)
+    signaler(f"Outil {appel.function.name} exécuté.")
+    return resultat
