@@ -1,12 +1,22 @@
 import pytest
 
+# Used to test ecrire_fiche()
+# See : https://docs.python.org/fr/3/library/unittest.mock.html
+from unittest.mock import Mock
+
 # Used to test executer()
 # See: https://docs.python.org/fr/3/library/types.html#types.SimpleNamespace
 # Essentially creates an empty object we can give attributes to
 # This way you don't need to declare a Class yourself
 from types import SimpleNamespace
 
-from assistant.outils import AccesRefuse, lire_fiche, chemin_autorise, executer
+from assistant.outils import (
+    AccesRefuse,
+    lire_fiche,
+    chemin_autorise,
+    executer,
+    ecrire_fiche,
+)
 
 
 # TESTS: chemin_autorise()
@@ -156,3 +166,50 @@ def test_executer_fail_outside_folder(limites, tmp_path):
     call = fake_tool_call("lire_fiche", '{"nom": "../.env.md"}')
     with pytest.raises(AccesRefuse):
         executer(call, limites, None)
+
+
+# TESTS: ecrire_fiche()
+
+# Constants so we can easily modify later without breaking everything
+EXISTING_FICHE = "existing-fiche.md"
+NEW_FICHE = "new-fiche.md"
+ORIGINAL_CONTENT = "# Original content"
+NEW_CONTENT = "# New content"
+
+
+# Fixture so we can re-use this in all our ecrire_fiche() tests. Only used in this file
+@pytest.fixture
+def existing_fiche(limites):
+    """Create fiche in temporary fiches folder, return its path."""
+    fiche = limites["dossier_fiches"] / EXISTING_FICHE
+    fiche.write_text(ORIGINAL_CONTENT, encoding="utf-8")
+    return fiche
+
+
+# Could have done it with helper functions instead of mock, but then we'd need a class or something to handle cases where we need to check the call
+# Mock essentially replaces the interactive confirmer from the interface
+def test_ecrire_fiche_fail_overwrite_declined(limites, existing_fiche):
+    """Check existing fiche remains unchanged when technician declines"""
+    declined = Mock(return_value=False)
+    with pytest.raises(AccesRefuse, match="declined"):
+        ecrire_fiche(EXISTING_FICHE, NEW_CONTENT, limites, declined)
+    assert existing_fiche.read_text(encoding="utf-8") == ORIGINAL_CONTENT
+
+
+def test_ecrire_fiche_fail_outside_folder(limites, tmp_path):
+    """Check writing outside the fiche folder is refused and creates nothing"""
+    accept = Mock(return_value=True)
+    # Inclue keyword check from error message so we know it fails at the right place
+    with pytest.raises(AccesRefuse, match="outside"):
+        ecrire_fiche("../outside.md", NEW_CONTENT, limites, accept)
+    assert not (tmp_path / "outside.md").exists()
+
+
+# TODO : tests
+# création
+# écrasement accepté
+# confirmation demandée pour la bonne fiche
+# écrasement refusé < DONE
+# hors du dossier < DONE
+# trop gros
+# à la limite
