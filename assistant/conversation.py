@@ -1,6 +1,7 @@
 """Cœur de l’assistant : la conversation et la boucle des appels d’outil."""
 
 from assistant import client, outils
+from assistant.outils import lire_fiche
 
 CONSIGNES = """Tu es l’assistant de l’équipe support de Batifact, éditeur d’un logiciel de facturation pour artisans.
 Réponds en français, brièvement, à partir des fiches de procédure, et cite la fiche utilisée.
@@ -21,8 +22,8 @@ def nouvelle_conversation(limites):
 
 def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
-    # À faire (étape 3).
-    raise NotImplementedError("Étape 3 : joindre_fiche")
+    answer = lire_fiche(nom, limites)
+    return f"{question}\n\n{answer}"
 
 
 def poser(question, messages, service, modele, limites, confirmer, signaler):
@@ -31,7 +32,28 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
     signaler(texte) affiche une opération ou un refus à l’utilisateur.
     """
-    # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
-    # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
-    # À faire (étape 4) : arrêter la question au-delà des limites.
-    raise NotImplementedError("Étape 2 : poser")
+    messages.append({"role": "user", "content": question})
+    reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+    message = reponse.choices[0].message
+
+    while message.tool_calls:
+        messages.append(message)
+        for appel in message.tool_calls:
+            try:
+                resultat = outils.executer(appel, limites, confirmer)
+                signaler(f"Outil utilisé : {appel.function.name}.")
+            except outils.AccesRefuse as erreur:
+                resultat = str(erreur)
+                signaler(resultat)
+            messages.append(
+                {"role": "tool", "tool_call_id": appel.id, "content": resultat}
+            )
+        reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+        message = reponse.choices[0].message
+
+    texte = message.content
+    messages.append({"role": "assistant", "content": texte})
+    return texte
+
+
+# À faire (étape 4) : arrêter la question au-delà des limites.

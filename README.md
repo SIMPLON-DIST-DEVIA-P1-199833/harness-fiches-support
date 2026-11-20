@@ -308,4 +308,71 @@ Ton travail est d’abord enregistré dans un commit, puis un second commit corr
 
 ## Ton assistant
 
-> À compléter au fil des étapes : installation, configuration de la clé (sans sa valeur), lancement, comportement aux limites, et comparaison de l’étape 3.
+> Assistant en ligne de commande, écrit en Python avec Rich, qui répond aux questions de l’équipe support de Batifact à partir des fiches de procédure et rédige des brouillons de fiches. Il appelle le service d’IA de l’entreprise par sa passerelle LiteLLM.
+
+### 0. Prérequis
+
+> Python 3.11 ou plus récent
+> Git
+> Une clé API personnelle pour la passerelle LiteLLM de l’entreprise et l’adresse url de la passerelle.
+
+### 1. Installation 
+
+Les différentes commandes se lancent toutes à la racine du projet. 
+
+- Faire un fork sur le repo d'origine et laisser les données par défaut ;
+- Cloner le fork en local, puis se rendre dans le dossier :
+
+    ```sh
+    git clone https://github.com/<ton-ID-Github>/harness-fiches-support.git
+    cd harness-fiches-support
+    ```
+
+- Créer l'environnement virtuel puis l'activer :
+    
+    ```sh
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
+
+- Installer les dépendances :
+
+    ```sh
+    pip install -r requirements.txt
+    ```
+### 2. Configuration
+
+- Dupliquer le fichier `.env.example` et le renommer `.env`
+- À la racine du projet, se rendre dans le fichier `.gitignore` et contrôler la présence du nom de fichier `.env`
+- Dans le fichier `.env` renseigner les variables suivantes :
+
+   | Variable | Rôle |
+   | --- | --- |
+   | `LITELLM_API_KEY` | Ta clé API personnelle |
+   | `LITELLM_BASE_URL` | Adresse de la passerelle LiteLLM de l’entreprise |
+   | `MODELE` | Modèle utilisé : `gpt-luna` (par défaut), `gpt-sol`, `claude-sonnet` ou `claude-haiku` |
+   | `SERVICE` | Optionnelle. `simule` active le service d’IA simulé, sans réseau ni quota. Sans cette variable, l’assistant utilise le vrai service (`litellm`) |
+
+> Avant chaque commit, exécute un `git status` et contrôler que le `.env` n'y figure pas
+
+### 3. Lancement & Vérification
+
+- Utilise la commande suivante pour tester ton accès :
+
+    ```sh
+    python -m assistant --verifier
+    ```
+
+    3 réponses possibles :
+
+    - **avec SERVICE="simule", le programme répond** : "Réponse simulée à : Réponds seulement : accès vérifié."
+
+    - **avec une clé et une url valide, le programme répond** : "accès vérifié."
+
+    - **si la clé ou l'url manque dans le `.env`** :un message explique quoi faire.
+
+En cas de `ModuleNotFoundError`, voir l’[organisation du code](docs/organisation-du-code.md#erreurs-fréquentes).
+
+### 4. Comportement aux limites
+
+### 5. Comparaison avec l'étape 3
