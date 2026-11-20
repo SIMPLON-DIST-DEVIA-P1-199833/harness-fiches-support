@@ -11,6 +11,7 @@ Ce projet aide les assistants de support téléphonique de Batifact à retrouver
 Exécuter les commande suivantes :
 ```sh
 python -m venv .venv
+source .env/bin/activate
 pip install -r requirements.txt
 ```
 

@@ -51,11 +51,11 @@ Le modèle choisit quoi lire et quoi écrire, mais une fiche ou une question peu
 
 L’assistant joint le service d’IA de l’entreprise avec ta clé, sans jamais la publier.
 
-1. [x] Crée l’environnement virtuel et installe les dépendances.
-2. [x] Configure ta clé dans `.env`.
-3. [x] Complète `charger_configuration` dans `assistant/configuration.py`.
-4. [x] Vérifie l’accès avec `python -m assistant --verifier`.
-5. [x] Décris l’installation dans [Ton assistant](#ton-assistant).
+1. Crée l’environnement virtuel et installe les dépendances.
+2. Configure ta clé dans `.env`.
+3. Complète `charger_configuration` dans `assistant/configuration.py`.
+4. Vérifie l’accès avec `python -m assistant --verifier`.
+5. Décris l’installation dans [Ton assistant](#ton-assistant).
 
 **Résultat :**
 
@@ -104,10 +104,10 @@ Supprimer le fichier ne suffit pas : la clé reste dans l’historique. Préveni
 
 Le technicien enchaîne les questions pendant un même appel, et une panne du service ne lui fait pas perdre l’assistant.
 
-1. [x] Complète `poser` dans `assistant/conversation.py` : envoie la conversation au service et garde l’historique.
-2. [x] Dans `assistant/client.py`, transforme chaque erreur du service en `ServiceIndisponible`.
-3. [x] Dans `assistant/interface.py`, affiche ces erreurs sans quitter.
-4. [x] Essaie avec `SERVICE=simule` les questions `panne`, `lent` et `refus`.
+1. Complète `poser` dans `assistant/conversation.py` : envoie la conversation au service et garde l’historique.
+2. Dans `assistant/client.py`, transforme chaque erreur du service en `ServiceIndisponible`.
+3. Dans `assistant/interface.py`, affiche ces erreurs sans quitter.
+4. Essaie avec `SERVICE=simule` les questions `panne`, `lent` et `refus`.
 
 **Résultat :**
 
@@ -165,11 +165,11 @@ Le lire de bas en haut : la dernière ligne donne l’exception, la ligne au-des
 
 Le technicien joint lui-même une fiche à sa question, ou laisse l’assistant choisir la fiche à lire. Ce sont les lignes 2 et 3 du [scénario de démonstration](docs/scenario-demonstration.md) que tu présenteras vendredi.
 
-1. [x] Complète `chemin_autorise` et `lire_fiche` dans `assistant/outils.py`, puis écris leurs tests (fiche du dossier, `..`, chemin absolu) jusqu’à ce que `python -m pytest` réussisse.
-2. [ ] Ajoute la commande `/joindre <fiche.md> <question>` et complète `joindre_fiche`. Essaie `/joindre facture-non-recue.md Résume cette fiche en trois lignes.`
-3. [ ] Complète `executer`, puis fais exécuter par `poser` les appels d’outil du modèle jusqu’à sa réponse finale. Essaie la question sur la TVA du scénario.
-4. [ ] Avec `SERVICE=simule`, vérifie les refus de ton programme : `/joindre ../.env.md Résume-la.` puis `lis ../.env.md`.
-5. [ ] Dans [Ton assistant](#ton-assistant), compare `/joindre` et `lire_fiche` en quelques lignes.
+1. Complète `chemin_autorise` et `lire_fiche` dans `assistant/outils.py`, puis écris leurs tests (fiche du dossier, `..`, chemin absolu) jusqu’à ce que `python -m pytest` réussisse.
+2. Ajoute la commande `/joindre <fiche.md> <question>` et complète `joindre_fiche`. Essaie `/joindre facture-non-recue.md Résume cette fiche en trois lignes.`
+3. Complète `executer`, puis fais exécuter par `poser` les appels d’outil du modèle jusqu’à sa réponse finale. Essaie la question sur la TVA du scénario.
+4. Avec `SERVICE=simule`, vérifie les refus de ton programme : `/joindre ../.env.md Résume-la.` puis `lis ../.env.md`.
+5. Dans [Ton assistant](#ton-assistant), compare `/joindre` et `lire_fiche` en quelques lignes.
 
 > [!WARNING]
 > Tant que ces refus ne sont pas vérifiés, essaie toute lecture hors du dossier avec `SERVICE=simule` uniquement. Si ton contrôle laisse passer `.env`, son contenu part au service d’IA avec ta clé, et le formateur doit la révoquer.
@@ -329,8 +329,8 @@ Le fichier `.env` doit bien être ignoré par git. (cf. [.gitignore](.gitignore)
 Exécuter les commande suivantes pour installer les dépendances et activer un environnement virtuel :
 ```sh
 python -m venv .venv
-pip install -r requirements.txt
 . .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 Lancer un test de connectivité :
@@ -342,4 +342,3 @@ Lancer un test de gestion d'erreur OpenAI :
 ```sh
 py.test -k test_exception_openai_transformee
 ```
-
