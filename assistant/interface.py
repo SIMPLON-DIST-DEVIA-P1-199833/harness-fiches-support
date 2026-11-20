@@ -101,6 +101,7 @@ def lancer(verifier=False):
             )
             console.print(Markdown(reponse))
         # Print caught error in console and continue so we keep looping
-        except client.ServiceIndisponible as erreur:
+        # Need to add the LimiteAtteinte exception, otherwise the program would exit when it reaches the limit. Test this with `boucle` when running the service SIMULE
+        except (client.ServiceIndisponible, conversation.LimiteAtteinte) as erreur:
             console.print(f"Erreur : {erreur}")
             continue

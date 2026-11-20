@@ -11,7 +11,6 @@ from assistant.service_simule import (
 from assistant.outils import AccesRefuse, DEFINITIONS
 
 
-# TEST: poser()
 def refuser(nom):
     return False
 
@@ -25,6 +24,10 @@ def tool_messages(messages):
     return [message for message in messages if message["role"] == "tool"]
 
 
+# TEST: poser()
+# TODO : add some more tests
+# test service keeps history when exception happens
+# test with empty last answer
 def test_poser_valid_model_response(limites):
     service = ServiceSimule([texte("Bonjour, que puis-je faire ?")])
     messages = conversation.nouvelle_conversation(limites)
@@ -104,9 +107,48 @@ def test_poser_fail_unknown_tool(limites):
     assert "unknown tool" in tool_messages(messages)[0]["content"]
 
 
-# TODO : some more tests
-# test service keeps history when exception happens
-# test with empty last answer
+# Run appel_outil from service_simule.py to test this < makes a response
+def test_poser_valid_at_call_limit(limites):
+    max_tool_calls = limites["appels_outil_max"]
+    tool_call = appel_outil("lire_fiche", nom="modifier-taux-tva.md")
+    # Call service the same amount of times as max_tool_calls
+    # `[tool_call] * max_tool_calls` creates a list of tool calls
+    service = ServiceSimule(
+        [tool_call] * max_tool_calls + [texte("Answer after the last tool call")]
+    )
+    messages = conversation.nouvelle_conversation(limites)
+    response = conversation.poser(
+        "TVA ?", messages, service, "simule", limites, refuser, ignorer
+    )
+    assert response == "Answer after the last tool call"
+
+
+def test_poser_fail_too_many_calls(limites):
+    max_tool_calls = limites["appels_outil_max"]
+    tool_call = appel_outil("lire_fiche", nom="modifier-taux-tva.md")
+    # One too many tool call
+    service = ServiceSimule([tool_call] * (max_tool_calls + 1))
+    messages = conversation.nouvelle_conversation(limites)
+    with pytest.raises(conversation.LimiteAtteinte):
+        # Same behaviour as the simulated 'boucle' command
+        conversation.poser(
+            "boucle", messages, service, "simule", limites, refuser, ignorer
+        )
+
+
+def test_poser_fail_too_many_calls_keeps_history(limites):
+    max_tool_calls = limites["appels_outil_max"]
+    tool_call = appel_outil("lire_fiche", nom="modifier-taux-tva.md")
+    service = ServiceSimule([tool_call] * (max_tool_calls + 1))
+    messages = conversation.nouvelle_conversation(limites)
+    # Copy history before the question to compare afterwards
+    message_history = list(messages)
+    with pytest.raises(conversation.LimiteAtteinte):
+        conversation.poser(
+            "boucle", messages, service, "simule", limites, refuser, ignorer
+        )
+    # Make sure messages remains unchanged
+    assert messages == message_history
 
 
 # TEST: joindre_fiche()

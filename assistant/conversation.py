@@ -56,7 +56,8 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     # Create shallow list copy
     # Only modify history if no exception is raised and we got a response
     convo = messages + [question_msg]
-    # TODO : Etape 4 - Stop the question at limites
+    # Count tool calls for each question
+    count_tool_calls = 0
     while True:
         # Model gets tool description. Model only asks, our code still does the reading, handling, executing
         response = client.envoyer(service, modele, convo, outils.DEFINITIONS)
@@ -73,6 +74,12 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
         # Convert tool call object from model to dict, then add it to convo
         convo.append(model_reply.to_dict(exclude_none=True))
         for tool_call in model_reply.tool_calls:
+            if count_tool_calls >= limites["appels_outil_max"]:
+                raise LimiteAtteinte(
+                    f"Maximum amount ({limites['appels_outil_max']}) of tool calls reached. Ask again, but be more precise"
+                )
+            # Increment if max is not reached yet
+            count_tool_calls += 1
             tool_message = _handle_tool_call(tool_call, limites, confirmer, signaler)
             convo.append(tool_message)
     # Use slicing to modify list in place.
