@@ -73,7 +73,9 @@ def chemin_autorise(nom: str, limites: Limites, pour_ecriture: bool = False) -> 
     # ou lien symbolique, et toute autre extension que celle des limites.
     chemin_dossier_fiches = RACINE / limites["dossier_fiches"]
     chemin_theorique = chemin_dossier_fiches / nom
-    contenu_dans_dossier = chemin_theorique.is_relative_to(chemin_dossier_fiches)
+    contenu_dans_dossier = chemin_theorique.resolve().is_relative_to(
+        chemin_dossier_fiches
+    )
 
     if pour_ecriture:
         if contenu_dans_dossier:
@@ -158,10 +160,7 @@ def executer(appel, limites: Limites, confirmer: Callable) -> str:
                 )
             if set(appel_args).issuperset({"nom", "contenu"}):
                 return ecrire_fiche(
-                    appel_args["nom"],
-                    appel_args["contenu"],
-                    limites,
-                    confirmer
+                    appel_args["nom"], appel_args["contenu"], limites, confirmer
                 )
             else:
                 raise RuntimeError(
