@@ -56,6 +56,17 @@ def lancer(verifier=False):
             messages = conversation.nouvelle_conversation(limites)
             signaler("Nouvelle conversation.")
             continue
+        if saisie.startswith("/joindre"):
+            parties = saisie.split(maxsplit=2)
+            if len(parties) != 3:
+                console.print("Usage: /joindre <nomfiche.md> <question>")
+                continue
+            else:
+                try:
+                    console.print(conversation.joindre_fiche(parties[1], parties[2:], limites))
+                except outils.AccesRefuse as e:
+                    console.print(str(e))
+                continue
         if not saisie:
             continue
         question = saisie

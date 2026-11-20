@@ -62,15 +62,18 @@ def lire_fiche(nom: str, limites: Limites) -> str:
     """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
     # À faire (étape 3) : contrôler le chemin et la taille, puis lire la fiche.
     try:
-        chemin_fiche = chemin_autorise(nom, limites)
+        chemin_fiche = chemin_autorise(nom, limites) # Raises: AccesRefuse
         file_size_ko = os.path.getsize(chemin_fiche) / 1000
         max_size_ko = limites["taille_max_ko"]
         if file_size_ko >= max_size_ko:
             raise AccesRefuse(
                 f"Fichier trop volumineux : {nom} ({file_size_ko} ko > {max_size_ko} ko (limite))"
             )
-        with open(chemin_fiche, "r") as fp:
-            return fp.read()
+        try:
+            with open(chemin_fiche, "r") as fp:
+                return fp.read()
+        except (OSError, UnicodeError) as e:
+            raise AccesRefuse(f"Ouverture impossible du fichier : {nom} ({e})")
     except FileNotFoundError:
         raise AccesRefuse(f"Chemin introuvable : {nom}")
 
