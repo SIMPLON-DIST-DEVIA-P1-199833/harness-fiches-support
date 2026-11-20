@@ -3,9 +3,9 @@
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.prompt import Prompt
-
-from assistant import client, conversation
+from assistant import client, conversation, outils
 from assistant.configuration import ConfigurationInvalide, charger_configuration, charger_limites
+from rich.prompt import Confirm
 
 AIDE = """Pose ta question, puis valide avec Entrée.
 /joindre <fiche.md> <question> : joindre une fiche à ta question
@@ -14,11 +14,9 @@ AIDE = """Pose ta question, puis valide avec Entrée.
 
 console = Console()
 
-
 def confirmer(nom):
     """Demande à l’utilisateur s’il accepte d’écraser la fiche."""
-    # À faire (étape 4).
-    raise NotImplementedError("Étape 4 : confirmer")
+    return Confirm.ask(f"Écraser la fiche {nom} ?", default=False)
 
 
 def signaler(texte):
@@ -55,10 +53,27 @@ def lancer(verifier=False):
         if not saisie:
             continue
         question = saisie
-        # À faire (étape 2) : afficher les erreurs du service sans quitter.
-        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
+        # Split() coupe sur les espaces
+        parties = saisie.split(maxsplit=2)  # /joindre plus nom-de-fiche
+        if parties and parties[0] == "/joindre":
+            if len(parties) < 3: #Si plus que 2 on a un pb de formatage de commande
+                signaler("Usage : /joindre <fiche.md> <question>")
+                continue
+            nom_fiche = parties[1]
+            question_utilisateur = parties[2]
+            try:
+                question = conversation.joindre_fiche(nom_fiche, question_utilisateur, limites)
+            except outils.AccesRefuse as erreur:
+                signaler(str(erreur))
+                continue
         signaler("Le service réfléchit…")
-        reponse = conversation.poser(
-            question, messages, service, configuration["modele"], limites, confirmer, signaler
-        )
+        # try/catch pour ne pas que l'app plante
+        # Utile pour helpdesk pour avoir de soucis pendant intervention
+        try:
+            reponse = conversation.poser(
+                question, messages, service, configuration["modele"], limites, confirmer, signaler
+            )
+        except client.ServiceIndisponible as erreur:
+            console.print(f"[red]Erreur : {erreur}[/red]")
+            continue
         console.print(Markdown(reponse))

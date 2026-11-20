@@ -28,13 +28,28 @@ def creer_client(configuration, limites):
 
 def envoyer(client, modele, messages, outils=None):
     """Envoie les messages au service et renvoie sa réponse, ou lève ServiceIndisponible."""
-    # À faire (étape 2) : transformer chaque erreur du service en ServiceIndisponible,
-    # avec un message qui dit à l’utilisateur ce qui se passe et quoi faire.
-    if outils:
-        reponse = client.chat.completions.create(model=modele, messages=messages, tools=outils)
-    else:
-        reponse = client.chat.completions.create(model=modele, messages=messages)
-    return reponse
+    try:
+        if outils:
+            reponse = client.chat.completions.create(
+                model=modele, messages=messages, tools=outils
+            )
+        else:
+            # Le module Openai chargé au début du document permet d'accéder aux méthodes chat completions create
+            # Cet appel fonctionne avec LiteLLM qui route vers plusieurs modèles
+            reponse = client.chat.completions.create(model=modele, messages=messages)
+        return reponse
+    except openai.APITimeoutError :
+        raise ServiceIndisponible("Erreur délai dépassé")    
+    except openai.APIConnectionError :
+        raise ServiceIndisponible("Service IA injoignable, problème de connexion")
+    except openai.AuthenticationError :  
+        raise ServiceIndisponible("Erreur d'authentification clé API")
+    except openai.APIError as erreur:
+        raise ServiceIndisponible(f"Cas général : erreur de l'API. Type d'erreur : {erreur}")
+        # raise ServiceIndisponible(
+        #     f"Service d'IA indisponible : {erreur}. "
+        #     "Vérifie la clé, l'adresse et le réseau, puis réessaie."
+        # )
 
 
 def verifier_acces(client, modele):

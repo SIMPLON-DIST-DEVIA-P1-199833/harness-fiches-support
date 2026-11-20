@@ -96,7 +96,7 @@ class ServiceSimule:
             raise RuntimeError("Service simulé : plus aucune réponse prévue.")
         if isinstance(prevue, Exception):
             raise prevue
-        return self._completion(model, messages, prevue)
+        return self._completion(model, messages, prevue) 
 
     def _selon_mots_cles(self, messages):
         question = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "").split("\n")[0]

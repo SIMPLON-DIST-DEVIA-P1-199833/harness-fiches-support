@@ -25,12 +25,24 @@ def charger_limites(chemin=RACINE / "limites.toml"):
 
 
 def charger_configuration():
-    """Lit .env et renvoie la configuration du service d’IA dans un dictionnaire."""
+    """Lit .env et renvoie la configuration du service d'IA dans un dictionnaire."""
     load_dotenv(RACINE / ".env")
-    service = os.getenv("SERVICE", "litellm")  # variable d’environnement SERVICE, sinon "litellm"
+    service = os.getenv("SERVICE", "litellm")
     if service == "simule":
         return {"service": "simule", "modele": "simule"}
-    # À faire (étape 1) : lire LITELLM_API_KEY, LITELLM_BASE_URL et MODELE ;
-    # lever ConfigurationInvalide avec un message qui dit quoi faire si la clé ou l’adresse manque ;
-    # renvoyer {"service": "litellm", "url": ..., "cle": ..., "modele": ...}.
-    raise NotImplementedError("Étape 1 : charger_configuration")
+    url = os.getenv("LITELLM_BASE_URL")
+    cle_api = os.getenv("LITELLM_API_KEY")
+    modele = os.getenv("MODELE")
+    if not url:
+        raise ConfigurationInvalide(
+            "Adresse du service absente : renseignez LITELLM_BASE_URL dans .env."
+        )
+    if not cle_api:
+        raise ConfigurationInvalide(
+            "Clé absente : renseignez LITELLM_API_KEY dans .env (ne la versionne jamais)."
+        )
+    if not modele:
+        raise ConfigurationInvalide(
+            "Modèle absent : renseignez MODELE dans .env (ex. gpt-luna)."
+        )
+    return {"service": "litellm", "url": url, "cle": cle_api, "modele": modele}

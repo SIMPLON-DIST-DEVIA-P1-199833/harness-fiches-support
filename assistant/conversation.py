@@ -21,17 +21,55 @@ def nouvelle_conversation(limites):
 
 def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
-    # À faire (étape 3).
-    raise NotImplementedError("Étape 3 : joindre_fiche")
-
+    reponse = outils.lire_fiche(nom,limites)
+    return f"Question : {question} \n_____________________\n Réponse: {reponse}"
 
 def poser(question, messages, service, modele, limites, confirmer, signaler):
-    """Ajoute la question aux messages, exécute les appels d’outil et renvoie la réponse du modèle.
-
-    confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
-    signaler(texte) affiche une opération ou un refus à l’utilisateur.
+    """Ajoute la question aux messages, envoie la conversation et garde l'historique.
+    confirmer et signaler seront utilisés aux étapes 3 et 4.
     """
-    # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
-    # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
-    # À faire (étape 4) : arrêter la question au-delà des limites.
-    raise NotImplementedError("Étape 2 : poser")
+    # Mémoriser la taille avant d'ajouter la question.
+    taille_avant = len(messages)
+    nombre_outils = 0
+    messages.append({"role": "user", "content": question})
+    while True:
+        try:
+            reponse = client.envoyer(service, modele, messages, outils=outils.DEFINITIONS)
+        except client.ServiceIndisponible:
+            # On retire tout ce qui a été ajouté pendant ce tour pour garder
+            # un historique cohérent, puis on propage.
+            # En d'autres mots : nettoyer l'historique pour qu'il reste cohérent puis on laisse
+            # l'interface gérer l'affichage de l'erreur
+            while len(messages) > taille_avant:
+                messages.pop()
+            # Un raise tout seul DANS UN EXCEPT relance exactement l'erreur en cours de traitement
+            # avec type/message/traces d'exec. intact
+            # Un raise seul conserve le tout : on ne pert pas les messages ni les traces
+            raise
+        message = reponse.choices[0].message
+        if getattr(message, "tool_calls", None):
+            if nombre_outils + len(message.tool_calls) > limites["appels_outil_max"] :
+                msg = "Nomber max d'appels d'outils pour cette question"
+                messages.append({"role": "assistant", "content": msg})
+                return f"Nombre maximal d'outils utilisés atteints"
+            messages.append(message.model_dump(exclude_none=True))
+            for appel in message.tool_calls:
+                nombre_outils += 1
+                signaler(f"Outil : {appel.function.name}")
+                try:
+                    resultat = outils.executer(appel, limites, confirmer)
+                except outils.AccesRefuse as erreur:
+                    resultat = str(erreur)
+                    signaler(str(erreur))
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": appel.id,
+                    "content": resultat,
+                })
+            # On reboucle pour envoyer les résultats au modèle.
+            continue
+        if getattr(reponse, "usage", None) and reponse.usage.total_tokens > limites["conversation_max_jetons"]:
+            signaler("Conversation trop longue : elle repart de zéro.")
+            messages[:] = nouvelle_conversation(limites)
+        messages.append({"role": "assistant", "content": message.content})
+        return message.content
