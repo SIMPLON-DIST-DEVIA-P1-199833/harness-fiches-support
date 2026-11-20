@@ -1,5 +1,5 @@
 """Cœur de l’assistant : la conversation et la boucle des appels d’outil."""
-
+import json
 from assistant import client, outils
 
 CONSIGNES = """Tu es l’assistant de l’équipe support de Batifact, éditeur d’un logiciel de facturation pour artisans.
@@ -21,8 +21,10 @@ def nouvelle_conversation(limites):
 
 def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
-    # À faire (étape 3).
-    raise NotImplementedError("Étape 3 : joindre_fiche")
+    # À faire (étape 3)[fait]
+    contenu = outils.lire_fiche(nom, limites)
+    return f"La question de l'user: {question} \n\n Le nom de la fiche jointe: {nom} \n\n Le contenu de la fiche: {contenu}"
+
 
 
 def poser(question, messages, service, modele, limites, confirmer, signaler):
@@ -31,7 +33,54 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
     signaler(texte) affiche une opération ou un refus à l’utilisateur.
     """
-    # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
-    # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
-    # À faire (étape 4) : arrêter la question au-delà des limites.
-    raise NotImplementedError("Étape 2 : poser")
+    # À faire (étape 2) [fait] : envoyer la conversation avec client.envoyer et garder l’historique.
+    # À faire (étape 3) [fait] : exécuter les appels d’outil du modèle jusqu’à sa réponse finale. 
+    # À faire (étape 4)[fait] : arrêter la question au-delà des limites.
+    taille_initiale = len(messages)
+    appels = 0
+
+    try: 
+        messages.append({"role": "user", "content": question})
+        reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+        message = reponse.choices[0].message
+
+        while message.tool_calls :
+            appels += len(message.tool_calls)
+            if appels > limites["appels_outil_max"]:
+                del messages[taille_initiale:]
+                return "Question arrêtée : trop d'appels d'outil. Reformule ou pose une autre question."
+            messages.append(message)
+
+            for appel in message.tool_calls:
+
+                try:
+                    nom_fiche = json.loads(appel.function.arguments)["nom"]
+                except (json.JSONDecodeError, KeyError, TypeError):
+                    nom_fiche = "?"
+
+                if appel.function.name == "ecrire_fiche":
+                    signaler(f"Écriture de {nom_fiche} en cours...")
+                else:
+                    signaler(f"Lecture de {nom_fiche} en cours...")
+
+                try:
+                    resultat = outils.executer(appel, limites, confirmer)
+                except outils.AccesRefuse as erreur:
+                    signaler(f"Refusé : {erreur}")
+                    resultat = str(erreur)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": appel.id,       
+                    "content": resultat,            
+                })
+            
+            reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)    
+            message = reponse.choices[0].message
+    
+    except Exception:
+        del messages[taille_initiale:]
+        raise
+    
+    texte = message.content
+    messages.append({"role": "assistant","content": texte})
+    return texte

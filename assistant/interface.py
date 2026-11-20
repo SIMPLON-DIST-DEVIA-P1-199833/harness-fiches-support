@@ -2,9 +2,9 @@
 
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.prompt import Prompt
+from rich.prompt import Confirm, Prompt
 
-from assistant import client, conversation
+from assistant import client, conversation, outils
 from assistant.configuration import ConfigurationInvalide, charger_configuration, charger_limites
 
 AIDE = """Pose ta question, puis valide avec Entrée.
@@ -17,8 +17,8 @@ console = Console()
 
 def confirmer(nom):
     """Demande à l’utilisateur s’il accepte d’écraser la fiche."""
-    # À faire (étape 4).
-    raise NotImplementedError("Étape 4 : confirmer")
+    # À faire (étape 4) [fait].
+    return Confirm.ask(f"La fiche {nom} existe déjà. L’écraser ?", default=False)
 
 
 def signaler(texte):
@@ -38,7 +38,6 @@ def lancer(verifier=False):
     if verifier:
         console.print(client.verifier_acces(service, configuration["modele"]))
         return 0
-
     messages = conversation.nouvelle_conversation(limites)
     console.print(f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}")
     while True:
@@ -55,10 +54,22 @@ def lancer(verifier=False):
         if not saisie:
             continue
         question = saisie
-        # À faire (étape 2) : afficher les erreurs du service sans quitter.
-        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
+        if saisie.startswith("/joindre") : 
+            decoupage = saisie.split(maxsplit=2)
+            if len(decoupage) <= 2 :
+                signaler("Usage : /joindre <fiche.md> <question>")
+                continue
+            try :
+                question = conversation.joindre_fiche(decoupage[1], decoupage[2], limites)
+            except outils.AccesRefuse as erreur :
+                signaler(erreur)
+                continue
+        # À faire (étape 2) [fait] : afficher les erreurs du service sans quitter.
+        # À faire (étape 3) [fait] : /joindre <fiche.md> <question> joint la fiche à la question.
         signaler("Le service réfléchit…")
-        reponse = conversation.poser(
-            question, messages, service, configuration["modele"], limites, confirmer, signaler
-        )
-        console.print(Markdown(reponse))
+        try:
+            reponse = conversation.poser(question, messages, service, configuration["modele"], limites, confirmer, signaler)
+            console.print(Markdown(reponse))
+        except client.ServiceIndisponible as erreur:      
+            signaler(erreur)
+            continue

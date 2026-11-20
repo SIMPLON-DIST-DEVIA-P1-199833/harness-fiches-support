@@ -1,6 +1,7 @@
 """Outils proposés au modèle : lire et écrire une fiche, dans les limites fixées."""
 
 from pathlib import Path
+import json
 
 DEFINITIONS = [
     {
@@ -15,7 +16,22 @@ DEFINITIONS = [
             },
         },
     },
-    # À faire (étape 4) : décrire l’outil ecrire_fiche.
+    # À faire (étape 4)[fait] : décrire l’outil ecrire_fiche.
+    {
+        "type": "function",
+        "function": {
+            "name": "ecrire_fiche",
+            "description": "Enregistre une fiche de procédure Markdown. Si la fiche existe déjà, l'utilisateur doit confirmer l'écrasement.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "nom": {"type": "string", "description": "Nom du fichier, par exemple suspendre-compte.md"},
+                    "contenu": {"type": "string", "description": "Contenu Markdown complet de la fiche"},
+                },
+                "required": ["nom", "contenu"],
+            },
+        },
+    },
 ]
 
 
@@ -31,25 +47,61 @@ def lister_fiches(limites):
 
 def chemin_autorise(nom, limites):
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
-    # À faire (étape 3) : refuser tout chemin hors du dossier, y compris par .., chemin absolu
+    # À faire (étape 3)[fait] : refuser tout chemin hors du dossier, y compris par .., chemin absolu
     # ou lien symbolique, et toute autre extension que celle des limites.
-    raise NotImplementedError("Étape 3 : chemin_autorise")
+    dossier = limites["dossier_fiches"].resolve()
+    extension = limites["extension"]
+    chemin = (dossier/nom).resolve()
+    if not chemin.is_relative_to(dossier) :
+        raise AccesRefuse("La fiche doit être dans le dossier autorisé") # Je choisis de ne pas indiquer le dossier pour raison de sécurite
+    if extension != chemin.suffix : # Je choisis d'être strict de respecter la casse .MD ne passe pas
+        raise AccesRefuse(f"La fiche doit être en extension {extension}") # Je choisis d'indiquer l'extension si jamais extension change dans limites.
+    return chemin
 
 
 def lire_fiche(nom, limites):
     """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
-    # À faire (étape 3) : contrôler le chemin et la taille, puis lire la fiche.
-    raise NotImplementedError("Étape 3 : lire_fiche")
-
+    # À faire (étape 3) [fait] : contrôler le chemin et la taille, puis lire la fiche.
+    chemin = chemin_autorise(nom, limites)
+    if not chemin.is_file() :
+        raise AccesRefuse(f"La fiche {nom} n'existe pas")
+    if chemin.stat().st_size > limites["taille_max_ko"]*1024 :
+        raise AccesRefuse(f"La fiche depasse la taille maximale de {limites["taille_max_ko"]}Ko")
+    contenu = chemin.read_text(encoding="utf-8")
+    return contenu
 
 def ecrire_fiche(nom, contenu, limites, confirmer):
     """Enregistre la fiche ; confirmer(nom) décide d’un écrasement. Lève AccesRefuse sinon."""
-    # À faire (étape 4) : contrôler le chemin et la taille, demander confirmation avant d’écraser.
-    raise NotImplementedError("Étape 4 : ecrire_fiche")
+    # À faire (étape 4)[fait]: contrôler le chemin et la taille, demander confirmation avant d’écraser.
+    chemin = chemin_autorise(nom, limites)
+    if len(contenu.encode("utf-8")) > limites["taille_max_ko"] * 1024:
+        raise AccesRefuse(f"La fiche depasse la taille maximale de {limites['taille_max_ko']}Ko")
+    if chemin.exists():
+        if not chemin.is_file():
+            raise AccesRefuse(f"{nom} n'est pas une fiche")
+        if not confirmer(nom) :
+            raise AccesRefuse(f"Ecrasement de {nom} refusé : la fiche est inchangée")
+    chemin.write_text(contenu, encoding="utf-8")
+    return f"Fiche {nom} enregistrée."
+
 
 
 def executer(appel, limites, confirmer):
     """Exécute un appel d’outil du modèle et renvoie le texte de son résultat, ou lève AccesRefuse."""
-    # À faire (étape 3) : lire les arguments JSON de appel.function.arguments,
+    # À faire (étape 3) [fait] : lire les arguments JSON de appel.function.arguments,
     # puis lancer l’outil nommé appel.function.name ; tout appel invalide est refusé.
-    raise NotImplementedError("Étape 3 : executer")
+    nom_outil = appel.function.name
+    try : 
+        arguments = json.loads(appel.function.arguments)
+        nom = arguments["nom"]
+        contenu = arguments["contenu"] if nom_outil == "ecrire_fiche" else None    
+    except (json.JSONDecodeError, KeyError, TypeError):
+        raise AccesRefuse("Arguments invalides : JSON attendu avec les clés requises par l'outil")
+    if nom_outil == "ecrire_fiche":
+        if not isinstance(contenu, str):
+            raise AccesRefuse("Le contenu de la fiche doit être du texte")
+        return ecrire_fiche(nom, contenu, limites, confirmer)
+    if nom_outil == "lire_fiche":
+        return lire_fiche(nom, limites)
+    raise AccesRefuse(f"Outil inconnu : {nom_outil}")
+

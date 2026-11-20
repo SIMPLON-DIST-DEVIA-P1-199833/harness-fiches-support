@@ -28,13 +28,22 @@ def creer_client(configuration, limites):
 
 def envoyer(client, modele, messages, outils=None):
     """Envoie les messages au service et renvoie sa réponse, ou lève ServiceIndisponible."""
-    # À faire (étape 2) : transformer chaque erreur du service en ServiceIndisponible,
+    # À faire (étape 2) [fait] : transformer chaque erreur du service en ServiceIndisponible,
     # avec un message qui dit à l’utilisateur ce qui se passe et quoi faire.
-    if outils:
-        reponse = client.chat.completions.create(model=modele, messages=messages, tools=outils)
-    else:
-        reponse = client.chat.completions.create(model=modele, messages=messages)
-    return reponse
+    try: 
+        if outils:
+            reponse = client.chat.completions.create(model=modele, messages=messages, tools=outils)
+        else:
+            reponse = client.chat.completions.create(model=modele, messages=messages)
+        return reponse
+    except openai.APITimeoutError as e:
+        raise ServiceIndisponible("Pas de réponse dans le délai, la question est abandonnée. Veuillez reposer la question") from e
+    except openai.APIConnectionError as e:
+        raise ServiceIndisponible("Service injoignable. Vérifier le réseau ou prévenir le responsable.") from e
+    except openai.AuthenticationError as e:
+        raise ServiceIndisponible("Clé API refusée. Vérifier LITELLM_API_KEY dans .env") from e
+    except openai.APIError as e:
+        raise ServiceIndisponible("Le service a renvoyé une erreur. Vous pouvez réessayer ou contacter un responsable") from e
 
 
 def verifier_acces(client, modele):
