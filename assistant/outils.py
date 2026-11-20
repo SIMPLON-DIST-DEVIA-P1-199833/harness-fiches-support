@@ -42,12 +42,8 @@ DEFINITIONS = [
                         "type": "string",
                         "description": "Contenu Markdown du fichier à écrire",
                     },
-                    # "confirmer": {
-                    #     "type": "boolean",
-                    #     "description": "Confirme l'écrasement du fichier de même nom si existe déjà. La valeur de ce champ doit être demandé à l'assistant s'il n'a pas donné d'autorisation explicite à la réécriture du fichier.",
-                    # },
                 },
-                "required": ["nom", "contenu"], #, "confirmer"],
+                "required": ["nom", "contenu"],
             },
         },
     },
