@@ -35,6 +35,9 @@ class AccesRefuse(Exception):
         super().__init__()
         self.message = message
 
+def noms_fonctions(definitions):
+    return [definition["function"]["name"] for definition in definitions]
+
 
 def lister_fiches(limites: Limites):
     """Renvoie les noms des fiches du dossier, triés."""
@@ -95,8 +98,10 @@ def executer(appel, limites: Limites, confirmer) -> str:
                 arg_nom = appel_args["nom"]
                 return lire_fiche(arg_nom, limites)
             else:
-                raise AccesRefuse("Nom de fichier nom fourni")
+                raise AccesRefuse("Lire fiche : nom de fichier nom fourni")
+        elif fonction.name in noms_fonctions(DEFINITIONS):
+            raise AccesRefuse(f"Appel outil non encore géré: {fonction.name}")
         else:
-            raise AccesRefuse(f"Nom de commande non existant: {fonction.name}")
+            raise AccesRefuse(f"Appel outil non existant: {fonction.name}")
     else:
         raise RuntimeError("Pas de commande à exécuter")

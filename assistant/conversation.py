@@ -34,14 +34,29 @@ def poser(question, messages, service, modele, limites, confirmer, signaler) -> 
     """
     # À faire (étape 2) : envoyer la conversation avec client.envoyer et garder l’historique.
     messages.append({"role": "user", "content": question})
-    reponse_txt = ""
-    reponse_obj = client.envoyer(service, modele, messages, outils.DEFINITIONS)
-    if tool_calls := reponse_obj.choices[0].message.tool_calls:
-        reponse_txt = outils.executer(tool_calls[0], limites, confirmer)
-    if not reponse_txt:
-        reponse_txt = str(reponse_obj.choices[0].message.content)
-    messages.append({"role": "assistant", "content": reponse_txt})
 
-    return reponse_txt
+    while True:
+        reponse_obj = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+        message = reponse_obj.choices[0].message
+        if not message:
+            raise client.ServiceIndisponible("Message IA reçu vide.")
+
+        messages.append(message.model_dump(exclude_none=True))
+        if not message.tool_calls:
+            return str(message.content)
+        else:
+            for tool_call in message.tool_calls:
+                try:
+                    result = outils.executer(tool_call, limites, confirmer)
+                    signaler(
+                        f"L'outil {tool_call.function.name} a été lancé"  # pyright: ignore[reportAttributeAccessIssue]
+                    )
+                except outils.AccesRefuse as e:
+                    signaler(e)
+                    result = str(e)
+                messages.append(
+                    {"role": "tool", "tool_call_id": tool_call.id, "content": result}
+                )
+
     # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
     # À faire (étape 4) : arrêter la question au-delà des limites.
