@@ -1,6 +1,7 @@
 """Outils proposés au modèle : lire et écrire une fiche, dans les limites fixées."""
 
 from pathlib import Path
+import json
 
 DEFINITIONS = [
     {
@@ -44,18 +45,19 @@ def chemin_autorise(nom, limites):
 
 
 def lire_fiche(nom, limites):
-    """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
+    """Vérifie la fiche, puis renvoie son contenu."""
     chemin = chemin_autorise(nom, limites)
+
+    if not chemin.is_file():
+        raise AccesRefuse("La fiche est introuvable ou ce n’est pas un fichier.")
+
     taille_max_octets = limites["taille_max_ko"] * 1024
+    taille_fiche = chemin.stat().st_size
 
-    try:
-        taille_fiche = chemin.stat().st_size
-        if taille_fiche > taille_max_octets:
-            raise AccesRefuse("La fiche dépasse la taille autorisée.")
+    if taille_fiche > taille_max_octets:
+        raise AccesRefuse("La fiche dépasse la taille autorisée.")
 
-        return chemin.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as erreur:
-        raise AccesRefuse("Impossible de lire cette fiche.") from erreur
+    return chemin.read_text(encoding="utf-8")
 
 
 def ecrire_fiche(nom, contenu, limites, confirmer):
@@ -65,7 +67,20 @@ def ecrire_fiche(nom, contenu, limites, confirmer):
 
 
 def executer(appel, limites, confirmer):
-    """Exécute un appel d’outil du modèle et renvoie le texte de son résultat, ou lève AccesRefuse."""
-    # À faire (étape 3) : lire les arguments JSON de appel.function.arguments,
-    # puis lancer l’outil nommé appel.function.name ; tout appel invalide est refusé.
-    raise NotImplementedError("Étape 3 : executer")
+    """Exécute un appel d’outil du modèle ou lève AccesRefuse."""
+    if appel.function.name != "lire_fiche":
+        raise AccesRefuse("Outil inconnu.")
+
+    try:
+        arguments = json.loads(appel.function.arguments)
+    except (json.JSONDecodeError, TypeError) as erreur:
+        raise AccesRefuse("Arguments de l’outil invalides.") from erreur
+
+    if not isinstance(arguments, dict):
+        raise AccesRefuse("Les arguments doivent être un objet JSON.")
+
+    nom = arguments.get("nom")
+    if not isinstance(nom, str) or not nom.strip() or "\x00" in nom:
+        raise AccesRefuse("Le nom de la fiche est invalide.")
+
+    return lire_fiche(nom, limites)

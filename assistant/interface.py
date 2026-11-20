@@ -59,7 +59,18 @@ def lancer(verifier=False):
         if not saisie:
             continue
         question = saisie
-        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
+        if saisie.startswith("/joindre"):
+            morceaux = saisie.split(maxsplit=2)
+            if len(morceaux) < 3:
+                console.print("Usage: /joindre <fiche.md> < question>")
+                continue
+
+            try:
+                question = conversation.joindre_fiche(morceaux[1], morceaux[2], limites)
+            except outils.AccesRefuse as refus:
+                signaler(refus)
+                continue
+
         try:
             signaler("Le service réfléchit…")
             reponse = conversation.poser(
