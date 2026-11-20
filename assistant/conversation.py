@@ -33,11 +33,29 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     confirmer(nom) renvoie True si l’utilisateur accepte d’écraser la fiche ;
     signaler(texte) affiche une opération ou un refus à l’utilisateur.
     """
-    # À faire (étape 2) [fait] : envoyer la conversation avec client.envoyer et garder l’historique. 
+    # À faire (étape 2) [fait] : envoyer la conversation avec client.envoyer et garder l’historique.
+    # À faire (étape 3) [fait] : exécuter les appels d’outil du modèle jusqu’à sa réponse finale. 
     messages.append({"role": "user", "content": question})
-    reponse = client.envoyer(service, modele, messages)
+    reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+    message = reponse.choices[0].message
+    while message.tool_calls :
+        messages.append(message)
+        for appel in message.tool_calls:
+            signaler(f"Lecture en cours...")
+            try:
+                resultat = outils.executer(appel, limites, confirmer)
+            except outils.AccesRefuse as erreur:
+                signaler(f"Refusé : {erreur}")
+                resultat = str(erreur)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": appel.id,       
+                "content": resultat,            
+            })
+        reponse = client.envoyer(service, modele, messages, outils.DEFINITIONS)    
+        message = reponse.choices[0].message                    
     texte = reponse.choices[0].message.content
     messages.append({"role": "assistant","content": texte})
     return texte
-    # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
+    
     # À faire (étape 4) : arrêter la question au-delà des limites.

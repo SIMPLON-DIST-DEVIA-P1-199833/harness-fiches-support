@@ -38,7 +38,6 @@ def lancer(verifier=False):
     if verifier:
         console.print(client.verifier_acces(service, configuration["modele"]))
         return 0
-
     messages = conversation.nouvelle_conversation(limites)
     console.print(f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}")
     while True:
@@ -58,7 +57,7 @@ def lancer(verifier=False):
         if saisie.startswith("/joindre") : 
             decoupage = saisie.split(maxsplit=2)
             if len(decoupage) <= 2 :
-                signaler("La requète n'est pas complète")
+                signaler("Usage : /joindre <fiche.md> <question>")
                 continue
             try :
                 question = conversation.joindre_fiche(decoupage[1], decoupage[2], limites)
