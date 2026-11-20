@@ -1,5 +1,8 @@
 """Interface en ligne de commande de l’assistant."""
 
+import pdb
+pdb.set_trace()
+
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.prompt import Prompt

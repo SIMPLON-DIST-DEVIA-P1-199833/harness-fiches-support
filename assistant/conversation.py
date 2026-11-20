@@ -41,7 +41,9 @@ def poser(question, messages, service, modele, limites, confirmer, signaler) -> 
     messages.append({"role": "user", "content": question})
 
     while True:
+        print("c'est parti pour un appel distant")
         reponse_obj = client.envoyer(service, modele, messages, outils.DEFINITIONS)
+        print("premier appel")
         message = reponse_obj.choices[0].message
         if not message:
             raise client.ServiceIndisponible("Message IA reçu vide.")
@@ -50,6 +52,7 @@ def poser(question, messages, service, modele, limites, confirmer, signaler) -> 
         if not message.tool_calls:
             return str(message.content)
         else:
+            print("il y a des appels de tools:", message.tool_calls)
             for tool_call in message.tool_calls:
                 try:
                     result = outils.executer(tool_call, limites, confirmer)

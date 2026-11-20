@@ -66,6 +66,7 @@ def envoyer(
             f"Vos demandes sont trop fréquentes. Attendez un peu. (OpenAI RATE LIMIT error {e.status_code}: {e.response})"
         )
     except openai.APIStatusError as e:
+        print(e)
         raise ServiceIndisponible(
             f"Le serveur de chat a un souci ou est mal appelé. Contactez votre administrateur. (OpenAI STATUS error {e.status_code}: {e.response})"
         )
