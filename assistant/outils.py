@@ -40,15 +40,30 @@ def lister_fiches(limites) -> list[Path]:
 def chemin_autorise(nom, limites) -> str:
     """Renvoie le chemin de la fiche si elle reste dans le dossier des fiches, sinon lève AccesRefuse."""
     # À faire (étape 3) : refuser tout chemin hors du dossier, y compris par .., chemin absolu
+
+    dossier = Path(limites["dossier_fiches"]).resolve()
+    demande = Path(nom)
+
+    if demande.is_absolute():
+        raise AccesRefuse("Chemin absolu interdit.")
+
+    chemin = (dossier / demande).resolve()
+
+    if not chemin.is_relative_to(dossier):
+        raise AccesRefuse("Accès hors du dossier interdit.")
+
+    if chemin.suffix != limites["extension"]:
+        raise AccesRefuse("Extension interdite.")
     if nom in lister_fiches(limites):
         return str(limites["dossier_fiches"] / nom)
+
     raise AccesRefuse("Accés Refuse")
 
 
 def lire_fiche(nom, limites):
     """Renvoie le contenu de la fiche, ou lève AccesRefuse."""
     # À faire (étape 3) : contrôler le chemin et la taille, puis lire la fiche.
-    chemin = chemin_autorise(nom, limites) # lève AccesRefuse
+    chemin = chemin_autorise(nom, limites)  # lève AccesRefuse
     try:
         with open(chemin, "r") as file:
             # todo: taille de fichier

@@ -85,13 +85,14 @@ def lancer(verifier=False):
 
             if len(dossier) <3:
                 signaler("utlilisation:/joindre <fich.md> <question>")
+                continue
 
             nom = dossier[1]
             question = dossier[2]
 
             try:
                 question = conversation.joindre_fiche(nom, question, limites)
-                console.print(question)
+           
             except outils.AccesRefuse as erreur:
                 signaler(str(erreur))
                 continue

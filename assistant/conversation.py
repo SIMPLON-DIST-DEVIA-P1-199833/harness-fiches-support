@@ -55,7 +55,7 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
                     signaler(f"Appel de l’outil : {appel.function.name}")
             except outils.AccesRefuse as refus:
                 signaler(refus)
-                resultat = refus
+                resultat = str(refus)
         texte = response.choices[0].message.content
 
         messages.append({
