@@ -18,6 +18,21 @@ AIDE = """Pose ta question, puis valide avec Entrée.
 
 console = Console()
 
+# import assistant.outils as outils, assistant.configuration as configuration
+
+# limites = configuration.charger_limites()
+# print(limites)
+# print()
+# fiches = outils.lister_fiches(limites)
+# print(fiches)
+# print()
+
+# r = outils.chemin_autorise("mentionner-assurance-decennale.md", limites)
+# r = outils.chemin_autorise("../../mentionner-assurance-deeecennale.md", limites)
+
+# print("chemin recu: ", r)
+# exit()
+
 
 def confirmer(nom):
     """Demande à l’utilisateur s’il accepte d’écraser la fiche."""
