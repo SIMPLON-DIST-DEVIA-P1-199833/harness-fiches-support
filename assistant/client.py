@@ -27,8 +27,8 @@ def creer_client(configuration, limites) -> openai.OpenAI | ServiceSimule:
             timeout=limites["delai_s"],
             max_retries=0,
         )
-    except openai.AuthenticationError as e:
-        raise ConfigurationInvalide(f"Réglages client OpenAI incorrects ({e})")
+    except Exception as e:
+        raise ConfigurationInvalide(f"Création impossible du client OpenAI ({e})")
     return client
 
 
@@ -51,6 +51,8 @@ def envoyer(
         else:
             reponse = client.chat.completions.create(model=modele, messages=messages)
     # Exception catching grasped from https://community.openai.com/t/how-to-do-exception-testing-since-the-update/564474/2
+    except openai.AuthenticationError as e:
+        raise ConfigurationInvalide(f"Authentification OpenAI impossible ({e})")
     except openai.APITimeoutError as e:
         raise ServiceIndisponible(
             f"Serveur trop lent à répondre. Réessayer plus tard. ({e.message})"
@@ -70,11 +72,6 @@ def envoyer(
     except openai.APIError as e:
         raise ServiceIndisponible(
             f"Erreur non traitée. Contactez votre administrateur. (OpenAI uncaught error: {e})"
-        )
-    except Exception as e:  # noqa: BLE001
-        import traceback
-        raise ServiceIndisponible(
-            f"Erreur non prévue. Contactez votre administrateur. (An unexpected error occurred: {e} {traceback.format_exc()})"
         )
 
     return reponse
