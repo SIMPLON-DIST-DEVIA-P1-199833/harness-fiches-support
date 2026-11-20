@@ -1,5 +1,5 @@
 """Cœur de l’assistant : la conversation et la boucle des appels d’outil."""
-
+import json
 from assistant import client, outils
 
 CONSIGNES = """Tu es l’assistant de l’équipe support de Batifact, éditeur d’un logiciel de facturation pour artisans.
@@ -53,10 +53,15 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
 
             for appel in message.tool_calls:
 
+                try:
+                    nom_fiche = json.loads(appel.function.arguments)["nom"]
+                except (json.JSONDecodeError, KeyError, TypeError):
+                    nom_fiche = "?"
+
                 if appel.function.name == "ecrire_fiche":
-                    signaler("Écriture en cours...")
+                    signaler(f"Écriture de {nom_fiche} en cours...")
                 else:
-                    signaler("Lecture en cours...")
+                    signaler(f"Lecture de {nom_fiche} en cours...")
 
                 try:
                     resultat = outils.executer(appel, limites, confirmer)
