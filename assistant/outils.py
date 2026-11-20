@@ -2,6 +2,7 @@
 
 import json
 import os.path
+from collections.abc import Callable
 from pathlib import Path
 
 from .configuration import RACINE, Limites
@@ -29,7 +30,7 @@ DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "ecrire_fiche",
-            "description": "Ecrit une fiche de procédure en Markdown et indique si elle a bien été écrite.",
+            "description": "Ecrit une fiche de procédure en Markdown et indique si elle a bien été écrite. L'assistant aura le dernier mot sur la réécriture ou non d'un fichier existant, par un sous-appel déjà inclut dans cet outil.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -41,12 +42,12 @@ DEFINITIONS = [
                         "type": "string",
                         "description": "Contenu Markdown du fichier à écrire",
                     },
-                    "confirmer": {
-                        "type": "boolean",
-                        "description": "Confirme l'écrasement du fichier de même nom si existe déjà. La valeur de ce champ doit être demandé à l'assistant s'il n'a pas donné d'autorisation explicite à la réécriture du fichier.",
-                    },
+                    # "confirmer": {
+                    #     "type": "boolean",
+                    #     "description": "Confirme l'écrasement du fichier de même nom si existe déjà. La valeur de ce champ doit être demandé à l'assistant s'il n'a pas donné d'autorisation explicite à la réécriture du fichier.",
+                    # },
                 },
-                "required": ["nom", "contenu", "confirmer"],
+                "required": ["nom", "contenu"], #, "confirmer"],
             },
         },
     },
@@ -110,7 +111,7 @@ def lire_fiche(nom: str, limites: Limites) -> str:
         raise AccesRefuse(f"Chemin introuvable : {nom}")
 
 
-def ecrire_fiche(nom: str, contenu: str, limites: Limites, confirmer) -> str:
+def ecrire_fiche(nom: str, contenu: str, limites: Limites, confirmer: Callable) -> str:
     """Enregistre la fiche ; confirmer(nom) décide d’un écrasement. Lève AccesRefuse sinon. Retourne nom si succès."""
     # À faire (étape 4) : contrôler le chemin et la taille, demander confirmation avant d’écraser.
     if not str(contenu).strip():
@@ -120,7 +121,7 @@ def ecrire_fiche(nom: str, contenu: str, limites: Limites, confirmer) -> str:
     chemin_fiche = chemin_autorise(
         nom, limites, pour_ecriture=True
     )  # Raises: AccesRefuse
-    if chemin_fiche.exists() and not confirmer:
+    if chemin_fiche.exists() and not confirmer(nom):
         raise AccesRefuse(
             f"Impossible d'écrire la fiche {nom}, car l'autorisation d'écrasement est négative."
         )
@@ -134,7 +135,7 @@ def ecrire_fiche(nom: str, contenu: str, limites: Limites, confirmer) -> str:
     return nom
 
 
-def executer(appel, limites: Limites, confirmer) -> str:
+def executer(appel, limites: Limites, confirmer: Callable) -> str:
     """Exécute un appel d’outil du modèle et renvoie le texte de son résultat, ou lève AccesRefuse."""
     # À faire (étape 3) : lire les arguments JSON de appel.function.arguments,
     # puis lancer l’outil nommé appel.function.name ; tout appel invalide est refusé.
@@ -159,12 +160,12 @@ def executer(appel, limites: Limites, confirmer) -> str:
                 raise AccesRefuse(
                     f"Appel outil non valide: JSON reçu malformatté ({e})"
                 )
-            if set(appel_args).issuperset({"nom", "contenu", "confirmer"}):
+            if set(appel_args).issuperset({"nom", "contenu"}):
                 return ecrire_fiche(
                     appel_args["nom"],
                     appel_args["contenu"],
                     limites,
-                    appel_args["confirmer"],
+                    confirmer
                 )
             else:
                 raise RuntimeError(

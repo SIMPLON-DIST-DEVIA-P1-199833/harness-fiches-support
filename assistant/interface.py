@@ -1,8 +1,5 @@
 """Interface en ligne de commande de l’assistant."""
 
-import pdb
-pdb.set_trace()
-
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.prompt import Prompt
@@ -32,7 +29,10 @@ def afficher_aide(aide):
 def confirmer(nom):
     """Demande à l’utilisateur s’il accepte d’écraser la fiche."""
     # À faire (étape 4).
-    raise NotImplementedError("Étape 4 : confirmer")
+    saisie = ""
+    while saisie not in ("oui", "non"):
+        saisie = Prompt.ask(f"\nEst-ce OK pour réécrire {nom}? (oui/non)").strip().lower()
+    return saisie == "oui"
 
 
 def signaler(texte):

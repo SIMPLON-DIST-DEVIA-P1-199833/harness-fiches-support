@@ -19,7 +19,7 @@ Limites = TypedDict(
         "extension": str,
         "taille_max_ko": int,
         "delai_s": int,
-        "appels_outils_max": int,
+        "appels_outil_max": int,
         "conversations_max_jetons": int,
     },
 )
