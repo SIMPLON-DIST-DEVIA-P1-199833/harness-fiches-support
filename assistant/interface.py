@@ -1,10 +1,10 @@
 """Interface en ligne de commande de l’assistant."""
-
+from assistant import client, conversation, outils
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.prompt import Prompt
 
-from assistant import client, conversation
+from assistant import client, conversation, outils
 from assistant.configuration import (
     ConfigurationInvalide,
     charger_configuration,
@@ -80,6 +80,21 @@ def lancer(verifier=False):
         question = saisie
         # À faire (étape 2) : afficher les erreurs du service sans quitter.
         # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
+        if saisie == "/joindre" or saisie.startswith("/joindre"):
+            dossier = saisie.split(maxsplit=2)
+
+            if len(dossier) <3:
+                signaler("utlilisation:/joindre <fich.md> <question>")
+
+            nom = dossier[1]
+            question = dossier[2]
+
+            try:
+                question = conversation.joindre_fiche(nom, question, limites)
+                console.print(question)
+            except outils.AccesRefuse as erreur:
+                signaler(str(erreur))
+                continue
         try:
             signaler("Le service réfléchit…")
             reponse = conversation.poser(

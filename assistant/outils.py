@@ -65,3 +65,19 @@ def executer(appel, limites, confirmer):
     """Exécute un appel d’outil du modèle et renvoie le texte de son résultat, ou lève AccesRefuse."""
     # À faire (étape 3) : lire les arguments JSON de appel.function.arguments,
     # puis lancer l’outil nommé appel.function.name ; tout appel invalide est refusé.
+    try:
+        arguments = json.loads(appel.function.arguments)
+    except (json.JSONDecodeError, TypeError):
+        raise AccesRefuse(
+            f"Refus : arguments JSON mal formés pour la fonction {appel.function.name}"
+        )
+
+    try:
+        if appel.function.name == "lire_fiche":
+            return lire_fiche(arguments["nom"], limites)
+    except (KeyError, TypeError):
+        raise AccesRefuse(
+            f"Refus : les arguments pour la fonction {appel.function.name} sont incorrects ou incomplets."
+        )
+
+    raise AccesRefuse(f"L’outil {appel.function.name} est inconnu.")
