@@ -22,7 +22,27 @@ DEFINITIONS = [
             },
         },
     },
-    # À faire (étape 4) : décrire l’outil ecrire_fiche.
+    {
+        "type": "function",
+        "function": {
+            "name": "ecrire_fiche",
+            "description": "Ecrit une fiche de procédure et l'enregistre dans le dossier des fiches. Un ecrasement de fiche existante requiert la confirmation du technicien.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "description": "Nom du fichier, par exemple suspendre-compte.md",
+                    },
+                    "contenu": {
+                        "type": "string",
+                        "description": "Contenu du fichier complet, que ce soit pour la creation d'une nouvelle fiche ou la modification d'une fiche existant. Au format Markdown, en suivant le format des fiches existantes: # Titre, puis les sections ## Symptôme, ## Étapes, ## Vérification",
+                    },
+                },
+                "required": ["nom", "contenu"],
+            },
+        },
+    },
 ]
 
 
