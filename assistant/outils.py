@@ -31,10 +31,6 @@ DEFINITIONS = [
 class AccesRefuse(Exception):
     """Une limite fixée par l’équipe interdit l’opération demandée."""
 
-    def __init__(self, message: str = "") -> None:
-        super().__init__()
-        self.message = message
-
 def noms_fonctions(definitions):
     return [definition["function"]["name"] for definition in definitions]
 

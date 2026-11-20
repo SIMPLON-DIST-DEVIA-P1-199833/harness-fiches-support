@@ -27,7 +27,7 @@ def creer_client(configuration, limites) -> openai.OpenAI | ServiceSimule:
             timeout=limites["delai_s"],
             max_retries=0,
         )
-    except Exception as e:
+    except (openai.OpenAIError, TypeError, ValueError) as e:
         raise ConfigurationInvalide(f"Création impossible du client OpenAI ({e})")
     return client
 

@@ -1,7 +1,6 @@
 """Cœur de l’assistant : la conversation et la boucle des appels d’outil."""
 
 from assistant import client, outils
-import json
 
 CONSIGNES = """Tu es l’assistant de l’équipe support de Batifact, éditeur d’un logiciel de facturation pour artisans.
 Réponds en français, brièvement, à partir des fiches de procédure, et cite la fiche utilisée.
@@ -11,6 +10,11 @@ Fiches disponibles : {fiches}"""
 
 class LimiteAtteinte(Exception):
     """La question en cours s’arrête sur une limite fixée par l’équipe."""
+
+
+def lister_fiches(limites):
+    """Lister les fiches disponibles en Markdown."""
+    return "\n".join(f" - {nom_fiche}" for nom_fiche in outils.lister_fiches(limites))
 
 
 def nouvelle_conversation(limites):
@@ -24,7 +28,7 @@ def joindre_fiche(nom, question, limites):
     """Renvoie la question suivie du contenu de la fiche jointe, ou lève AccesRefuse."""
     # À faire (étape 3).
     fiche = outils.lire_fiche(nom, limites)  # raises AccesRefuse
-    return f"{question}\n{fiche}"
+    return f"**{question}**\n\nFiche concernée:\n\n---------------\n\n{fiche}"
 
 
 def poser(question, messages, service, modele, limites, confirmer, signaler) -> str:

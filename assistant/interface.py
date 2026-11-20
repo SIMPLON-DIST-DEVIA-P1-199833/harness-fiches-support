@@ -14,6 +14,7 @@ from assistant.configuration import (
 AIDE = """Pose ta question, puis valide avec Entrée.
 /joindre <fiche.md> <question> : joindre une fiche à ta question
 /nouvelle : repartir d’une conversation vide
+/fiches : liste les fiches disponibles
 /quitter : quitter"""
 
 console = Console()
@@ -56,6 +57,9 @@ def lancer(verifier=False):
             messages = conversation.nouvelle_conversation(limites)
             signaler("Nouvelle conversation.")
             continue
+        if saisie == "/fiches":
+            console.print(conversation.lister_fiches(limites))
+            continue
         if saisie.startswith("/joindre"):
             parties = saisie.split(maxsplit=2)
             if len(parties) != 3:
@@ -63,10 +67,10 @@ def lancer(verifier=False):
                 continue
             else:
                 try:
-                    console.print(conversation.joindre_fiche(parties[1], parties[2:], limites))
+                    saisie = conversation.joindre_fiche(parties[1], parties[2], limites)
+                    console.print(Markdown(saisie))
                 except outils.AccesRefuse as e:
-                    console.print(str(e))
-                continue
+                    saisie = f"Accès refusé: {e}"
         if not saisie:
             continue
         question = saisie
@@ -82,5 +86,5 @@ def lancer(verifier=False):
             reponse = f"Le service est indisponible ({si})"
             console.print(Markdown(reponse), style="red on white")
         except outils.AccesRefuse as ar:
-            reponse = f"Accès refusé ({ar.message})"
+            reponse = f"Accès refusé ({ar})"
             console.print(Markdown(reponse), style="blue on white")
