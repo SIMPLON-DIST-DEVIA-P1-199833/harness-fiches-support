@@ -27,6 +27,25 @@ def joindre_fiche(nom, question, limites):
     return f"{question}\nAttached fiche: {nom}\n{fiche}"
 
 
+def _handle_tool_call(tool_call, limites, confirmer, signaler):
+    """Run/refuse a tool call from model and build its answer
+    A response is always sent back to the model, whether the tool call was refused or not
+
+    Returns:
+        dict: tool message for the convo, with call_id and tool result
+    """
+    try:
+        result = outils.executer(tool_call, limites, confirmer)
+        signaler(
+            f"Tool_call: {tool_call.function.name}: {tool_call.function.arguments}"
+        )
+    # Send refusal to the model
+    except outils.AccesRefuse as error:
+        result = f"{error}"
+        signaler(result)
+    return {"role": "tool", "tool_call_id": tool_call.id, "content": result}
+
+
 def poser(question, messages, service, modele, limites, confirmer, signaler):
     """Ajoute la question aux messages, exécute les appels d’outil et renvoie la réponse du modèle.
 
@@ -34,22 +53,29 @@ def poser(question, messages, service, modele, limites, confirmer, signaler):
     signaler(texte) affiche une opération ou un refus à l’utilisateur.
     """
     question_msg = {"role": "user", "content": question}
-    # Create shallow list copy on function call
+    # Create shallow list copy
     # Only modify history if no exception is raised and we got a response
-    response = client.envoyer(service, modele, messages + [question_msg])
-    response_text = response.choices[0].message.content
-    messages.append(question_msg)
-    messages.append({"role": "assistant", "content": response_text})
-    return response_text
-    """
-    messages.append(
-        {
-            "role": "tool",
-            "tool_call_id": tool_call.id,
-            "content": json.dumps({"horoscope": horoscope}),
-        }
-    )
-    """
-    # role user requete, role tool sortie
-    # À faire (étape 3) : exécuter les appels d’outil du modèle jusqu’à sa réponse finale.
-    # À faire (étape 4) : arrêter la question au-delà des limites.
+    convo = messages + [question_msg]
+    # TODO : Etape 4 - Stop the question at limites
+    while True:
+        # Model gets tool description. Model only asks, our code still does the reading, handling, executing
+        response = client.envoyer(service, modele, convo, outils.DEFINITIONS)
+        model_reply = response.choices[0].message
+        # No tool call, final response if true, get out of loop
+        if not model_reply.tool_calls:
+            # Handle final answer without content
+            if not model_reply.content:
+                raise client.ServiceIndisponible(
+                    "AI service returned an empty answer, ask your question again."
+                )
+            convo.append({"role": "assistant", "content": model_reply.content})
+            break
+        # Convert tool call object from model to dict, then add it to convo
+        convo.append(model_reply.to_dict(exclude_none=True))
+        for tool_call in model_reply.tool_calls:
+            tool_message = _handle_tool_call(tool_call, limites, confirmer, signaler)
+            convo.append(tool_message)
+    # Use slicing to modify list in place.
+    # > Replace all elems in messages by elems in convo
+    messages[:] = convo
+    return model_reply.content
