@@ -15,9 +15,15 @@ AIDE = """Pose ta question, puis valide avec Entrée.
 /joindre <fiche.md> <question> : joindre une fiche à ta question
 /nouvelle : repartir d’une conversation vide
 /fiches : liste les fiches disponibles
-/quitter : quitter"""
+/quitter : quitter
+/aide : affiche cette aide
+"""
 
 console = Console()
+
+
+def afficher_aide(aide):
+    console.print(aide)
 
 
 def confirmer(nom):
@@ -37,7 +43,9 @@ def lancer(verifier=False):
         configuration = charger_configuration()
         limites = charger_limites()
         service = client.creer_client(configuration, limites)
-    except ConfigurationInvalide as erreur:  # erreur : l’exception levée ; l’afficher donne son message
+    except (
+        ConfigurationInvalide
+    ) as erreur:  # erreur : l’exception levée ; l’afficher donne son message
         console.print(f"Erreur : {erreur}")
         return 1
     if verifier:
@@ -45,7 +53,9 @@ def lancer(verifier=False):
         return 0
 
     messages = conversation.nouvelle_conversation(limites)
-    console.print(f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}")
+    console.print(
+        f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}"
+    )
     while True:
         try:
             saisie = Prompt.ask("\nToi").strip()
@@ -55,10 +65,15 @@ def lancer(verifier=False):
             return 0
         if saisie == "/nouvelle":
             messages = conversation.nouvelle_conversation(limites)
+            console.clear()
+            afficher_aide(AIDE)
             signaler("Nouvelle conversation.")
             continue
         if saisie == "/fiches":
             console.print(conversation.lister_fiches(limites))
+            continue
+        if saisie == "/aide":
+            afficher_aide(AIDE)
             continue
         if saisie.startswith("/joindre"):
             parties = saisie.split(maxsplit=2)
@@ -79,7 +94,13 @@ def lancer(verifier=False):
         signaler("Le service réfléchit…")
         try:
             reponse = conversation.poser(
-                question, messages, service, configuration["modele"], limites, confirmer, signaler
+                question,
+                messages,
+                service,
+                configuration["modele"],
+                limites,
+                confirmer,
+                signaler,
             )
             console.print(Markdown(reponse))
         except client.ServiceIndisponible as si:

@@ -342,3 +342,12 @@ Lancer un test de gestion d'erreur OpenAI :
 ```sh
 py.test -k test_exception_openai_transformee
 ```
+
+### Fonctionnement
+Commandes fonctionnelles :
+- `/fiches` (bonus hors spec) : affiche la liste des fiches de la machine sans les redemander à l'IA ;
+- `/joindre <chemin_fiche.md> <question sur la fiche>` : cette commande affiche le contenu d'une fiche et interroge l'IA dessus ;
+- `/aide` : affiche l'aide ;
+- `/nouvelle`: vide l'écran, remet à zéro l'historique des messages partagés avec l'IA, affiche l'aide, redonnne un prompt ;
+
+**Note :** `/joindre ...` a une équivalence partielle avec une commande libre comme `lis <chemin_fiche.md>`, où l'IA va se servir de l'outil `lire_fiche` pour consulter une fiche et en faire un résumé, sans afficher le contenu complet. Noter que `affiche <chemin_fiche.md>` affichera le contenu complet de la fiche, avec le même outil `lire_fiche`.
