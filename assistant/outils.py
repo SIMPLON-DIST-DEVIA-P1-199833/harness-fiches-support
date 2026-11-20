@@ -85,7 +85,12 @@ def executer(appel, limites: Limites, confirmer) -> str:
     fonction = getattr(appel, "function", None)
     if fonction is not None:
         if fonction.name == "lire_fiche":
-            appel_args = json.loads(fonction.arguments)
+            try:
+                appel_args = json.loads(fonction.arguments)
+            except json.JSONDecodeError as e:
+                raise AccesRefuse(
+                    f"Appel outil non valide: JSON reçu malformatté ({e})"
+                )
             if "nom" in appel_args:
                 arg_nom = appel_args["nom"]
                 return lire_fiche(arg_nom, limites)
