@@ -67,7 +67,7 @@ def envoyer(
         )
     except openai.APIStatusError as e:
         raise ServiceIndisponible(
-            f"Le serveur de chat a un souci ou est mal appelé. Contactez votre administrateur. (OpenAI STATUS error {e.status_code}: (e.response))"
+            f"Le serveur de chat a un souci ou est mal appelé. Contactez votre administrateur. (OpenAI STATUS error {e.status_code}: {e.response})"
         )
     except openai.APIError as e:
         raise ServiceIndisponible(
