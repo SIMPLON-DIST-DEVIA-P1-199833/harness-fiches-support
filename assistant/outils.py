@@ -1,5 +1,6 @@
 """Outils proposés au modèle : lire et écrire une fiche, dans les limites fixées."""
 
+import json
 from pathlib import Path
 
 DEFINITIONS = [
@@ -58,6 +59,13 @@ def ecrire_fiche(nom, contenu, limites, confirmer):
 
 def executer(appel, limites, confirmer):
     """Exécute un appel d’outil du modèle et renvoie le texte de son résultat, ou lève AccesRefuse."""
-    # À faire (étape 3) : lire les arguments JSON de appel.function.arguments,
-    # puis lancer l’outil nommé appel.function.name ; tout appel invalide est refusé.
-    raise NotImplementedError("Étape 3 : executer")
+    try:
+        arguments = json.loads(appel.function.arguments)
+    except json.JSONDecodeError:
+        raise AccesRefuse(f"Refusé : arguments mal formés pour {appel.function.name}.")
+    try:
+        if appel.function.name == "lire_fiche":
+            return lire_fiche(arguments["nom"], limites)
+    except (KeyError, TypeError):  # KeyError : argument absent ; TypeError : arguments qui ne sont pas un dictionnaire
+        raise AccesRefuse(f"Refusé : arguments incomplets pour {appel.function.name}.")
+    raise AccesRefuse(f"Refusé : l’outil {appel.function.name} n’existe pas.")
