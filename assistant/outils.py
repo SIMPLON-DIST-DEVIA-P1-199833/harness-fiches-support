@@ -106,6 +106,7 @@ def lire_fiche(nom, limites):
         fiche = path.read_text(encoding="utf-8")
     except UnicodeDecodeError as error:
         raise AccesRefuse("Access refused - File is not valid utf-8") from error
+    # Covers any disk read failures
     except OSError as error:
         raise AccesRefuse("Access refused - File could not be opened") from error
     return fiche
@@ -113,8 +114,32 @@ def lire_fiche(nom, limites):
 
 def ecrire_fiche(nom, contenu, limites, confirmer):
     """Enregistre la fiche ; confirmer(nom) décide d’un écrasement. Lève AccesRefuse sinon."""
-    # À faire (étape 4) : contrôler le chemin et la taille, demander confirmation avant d’écraser.
-    raise NotImplementedError("Étape 4 : ecrire_fiche")
+    path = chemin_autorise(nom, limites)
+    if not isinstance(contenu, str):
+        raise AccesRefuse(
+            f"Access refused - Content to add inside the fiche should be of type str, it is {type(contenu)}"
+        )
+    # Size of file in bytes
+    content_size = len(contenu.encode("utf-8"))
+    max_size = limites["taille_max_ko"] * 1000
+    if content_size > max_size:
+        raise AccesRefuse(
+            f"Access refused - File size is too big by {content_size - max_size} bytes. You are limited to {limites['taille_max_ko']}ko."
+        )
+    # Check if fiche existed before write
+    path_existed = path.is_file()
+    # Tests if fiche existed and THEN tests if technician confirmed the write
+    if path_existed and not confirmer(nom):
+        raise AccesRefuse(
+            f"Access refused - overwriting {nom!r} was declined by the technician"
+        )
+    try:
+        path.write_text(contenu, encoding="utf-8")
+    # Covers any disk write failures
+    except OSError as error:
+        raise AccesRefuse(f"Access refused - {nom!r} could not be written") from error
+    # modify if already exists, create otherwise
+    return f"{nom} overwritten" if path_existed else f"{nom} created"
 
 
 def executer(call, limites, confirmer):

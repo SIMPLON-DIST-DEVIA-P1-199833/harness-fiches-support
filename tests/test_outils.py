@@ -228,6 +228,14 @@ def test_ecrire_fiche_valid_content_at_size_limit(limites):
     assert new_fiche_path.read_text(encoding="utf-8") == max_fiche_size_content
 
 
+def test_ecrire_fiche_valid_creation_response(limites):
+    """Check the result sent to model when fiche was created"""
+    accept = Mock(return_value=True)
+    result = ecrire_fiche(NEW_FICHE, NEW_CONTENT, limites, accept)
+    assert NEW_FICHE in result
+    assert "created" in result
+
+
 def test_ecrire_fiche_fail_content_too_big(limites):
     """Check content of new fiche above size limit is not written and does not create a new fiche"""
     too_big_content = (limites["taille_max_ko"] * 1000 + 1) * "a"
@@ -249,7 +257,17 @@ def test_ecrire_fiche_fail_overwrite_declined(limites, existing_fiche):
 def test_ecrire_fiche_fail_outside_folder(limites, tmp_path):
     """Check writing outside the fiche folder is refused and creates nothing"""
     accept = Mock(return_value=True)
-    # Inclue keyword check from error message so we know it fails at the right place
+    # Include keyword check from error message so we know it fails at the right place
     with pytest.raises(AccesRefuse, match="outside"):
         ecrire_fiche("../outside.md", NEW_CONTENT, limites, accept)
     assert not (tmp_path / "outside.md").exists()
+
+
+def test_ecrire_fiche_fail_content_not_a_string(limites):
+    """Check non string content is refused and creates no new fiche"""
+    accept = Mock(return_value=True)
+    with pytest.raises(AccesRefuse, match="type str"):
+        # Test with int
+        ecrire_fiche(NEW_FICHE, 5, limites, accept)
+    new_fiche_path = limites["dossier_fiches"] / NEW_FICHE
+    assert not new_fiche_path.exists()
