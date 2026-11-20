@@ -36,9 +36,9 @@ def _handle_tool_call(tool_call, limites, confirmer, signaler):
     """
     try:
         result = outils.executer(tool_call, limites, confirmer)
-        signaler(
-            f"Tool_call: {tool_call.function.name}: {tool_call.function.arguments}"
-        )
+        # Only show the tool and fiche name
+        fiche_name = outils._parse_arguments(tool_call).get("nom")
+        signaler(f"Tool_call: {tool_call.function.name}: {fiche_name}")
     # Send refusal to the model
     except outils.AccesRefuse as error:
         result = f"{error}"
