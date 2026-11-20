@@ -353,3 +353,9 @@ python3 -m assistant --verifier   # checks access to the AI service, then exits 
 python3 -m assistant # start the CLI assistant
 python3 -m pytest # launch all tests
 ```
+
+### /joindre vs lire_fiche tool
+/joindre is predictable, fiche is picked by the technician. The technician has to know which fiche to request.
+lire_fiche tool is based on the question from the technician, but the result depends on the model. More practical, but will use more tokens and time.
+
+In both cases, our Python code handles access rights and which files can be read.
