@@ -2,7 +2,7 @@
 
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.prompt import Prompt
+from rich.prompt import Prompt, Confirm
 
 from assistant import client, conversation
 from assistant.configuration import (
@@ -20,10 +20,18 @@ AIDE = """Pose ta question, puis valide avec Entrée.
 console = Console()
 
 
+# See: https://rich.readthedocs.io/en/stable/prompt.html
 def confirmer(nom):
     """Demande à l’utilisateur s’il accepte d’écraser la fiche."""
-    # À faire (étape 4).
-    raise NotImplementedError("Étape 4 : confirmer")
+    # 2 options possible, otherwise keep asking in a loop
+    # if no response is provided (empty), default to False ('n')
+    response = Confirm.ask(
+        f"Do you really wish to overwrite {nom!r} ?",
+        choices=["y", "n"],
+        default=False,
+        case_sensitive=False,
+    )
+    return response
 
 
 def signaler(texte):
@@ -105,3 +113,6 @@ def lancer(verifier=False):
         except (client.ServiceIndisponible, conversation.LimiteAtteinte) as erreur:
             console.print(f"Erreur : {erreur}")
             continue
+        # Quit if Ctrl+D / Ctrl+C during a question, same as above for saisie
+        except (EOFError, KeyboardInterrupt):
+            return 0
