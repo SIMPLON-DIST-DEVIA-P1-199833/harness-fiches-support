@@ -354,6 +354,22 @@ python3 -m assistant # start the CLI assistant
 python3 -m pytest # launch all tests
 ```
 
+### Behaviour at the limits
+
+Every limit comes from `limites.toml` and is enforced by the Python code, not by the model. When a limit is reached, the assistant shows a message and the conversation goes on.
+
+| Limit | What the assistant does |
+| --- | --- |
+| Fiches folder only (`..`, absolute paths, symlinks and subfolders included) | Read or write refused with a message. A refusal asked by the model is sent back to it, so it can explain it |
+| `.md` files only | Refused with a message |
+| 20 KB per fiche | A larger fiche is refused whole, never truncated. Larger content is never written |
+| 30 s per call to the AI service | The question is dropped with an error message. The history is unchanged |
+| 10 tool calls per question | The question stops with a message. The history is unchanged, and the next question is accepted |
+| Overwriting an existing fiche | The technician is asked first (default: no). A refusal leaves the fiche unchanged. A new fiche is created without asking |
+| AI service errors (unreachable, key refused, quota, empty answer) | An error message explains what to check, and the conversation goes on |
+
+Not implemented: the 60,000 tokens conversation limit (`conversation_max_jetons`, bonus).
+
 ### /joindre vs lire_fiche tool
 /joindre is predictable, fiche is picked by the technician. The technician has to know which fiche to request.
 lire_fiche tool is based on the question from the technician, but the result depends on the model. More practical, but will use more tokens and time.
