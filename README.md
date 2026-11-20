@@ -309,3 +309,16 @@ Ton travail est d’abord enregistré dans un commit, puis un second commit corr
 ## Ton assistant
 
 > À compléter au fil des étapes : installation, configuration de la clé (sans sa valeur), lancement, comportement aux limites, et comparaison de l’étape 3.
+
+**installation :**
+
+1. Crée l’environnement virtuel<br> 
+Crée ton environement `.venv` avec la commande `python -m venv .venv` dans ton terminale<br>
+Active ton `.venv` avec la commande `source .venv/bin/activate` ou `source .venv/Scripts/activate` suivant ta version
+
+2. installe les dépendances.<br>
+Vérifie que tu soit bien sur ton `.venv` et installe les dépendance avec `pip install -r requirements.txt`
+
+3. Configure ta clé dans `.env`.<br>
+Copie et colle le fichier `.env.example` au même endroit et renomme le `.env`<br>
+Puis dans le `.env` rajoute ta clé API après `LITELLM_API_KEY=`

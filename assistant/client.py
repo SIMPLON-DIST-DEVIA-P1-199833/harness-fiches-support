@@ -16,7 +16,9 @@ def creer_client(configuration, limites):
         return ServiceSimule()
     # Sans adresse, le SDK enverrait la clé à OpenAI : refuser avant tout appel.
     if not configuration.get("url"):
-        raise ConfigurationInvalide("Adresse du service absente : vérifie LITELLM_BASE_URL dans .env et ce que renvoie charger_configuration.")
+        raise ConfigurationInvalide(
+            "Adresse du service absente : vérifie LITELLM_BASE_URL dans .env et ce que renvoie charger_configuration."
+        )
     # Arguments nommés (nom=valeur) : chacun désigne son paramètre, dans n’importe quel ordre.
     return openai.OpenAI(
         base_url=configuration["url"],
@@ -30,15 +32,30 @@ def envoyer(client, modele, messages, outils=None):
     """Envoie les messages au service et renvoie sa réponse, ou lève ServiceIndisponible."""
     # À faire (étape 2) : transformer chaque erreur du service en ServiceIndisponible,
     # avec un message qui dit à l’utilisateur ce qui se passe et quoi faire.
-    if outils:
-        reponse = client.chat.completions.create(model=modele, messages=messages, tools=outils)
-    else:
-        reponse = client.chat.completions.create(model=modele, messages=messages)
-    return reponse
+    try:
+        if outils:
+            reponse = client.chat.completions.create(
+                model=modele, messages=messages, tools=outils
+            )
+        else:
+            reponse = client.chat.completions.create(model=modele, messages=messages)
+        return reponse
+    except openai.AuthenticationError:
+        raise ServiceIndisponible("Votre clé API est invalide ou expirée.")
+    except openai.APITimeoutError:
+        raise ServiceIndisponible("Le serveur a mis trop de temps à répondre")
+    except Exception as e:
+        raise ServiceIndisponible(
+            f"Le service est indisponible pour le moment. Erreur : {e}"
+        )
 
 
 def verifier_acces(client, modele):
     """Envoie une demande minimale et renvoie le texte de la réponse."""
-    reponse = envoyer(client, modele, [{"role": "user", "content": "Réponds seulement : accès vérifié."}])
+    reponse = envoyer(
+        client,
+        modele,
+        [{"role": "user", "content": "Réponds seulement : accès vérifié."}],
+    )
     # La réponse est un objet du SDK : ses champs se lisent avec un point, pas avec ["..."].
     return reponse.choices[0].message.content

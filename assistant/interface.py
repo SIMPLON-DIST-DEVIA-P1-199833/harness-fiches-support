@@ -2,10 +2,15 @@
 
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.prompt import Prompt
+from rich.prompt import Prompt, Confirm
+from pathlib import Path
 
 from assistant import client, conversation
-from assistant.configuration import ConfigurationInvalide, charger_configuration, charger_limites
+from assistant.configuration import (
+    ConfigurationInvalide,
+    charger_configuration,
+    charger_limites,
+)
 
 AIDE = """Pose ta question, puis valide avec Entrée.
 /joindre <fiche.md> <question> : joindre une fiche à ta question
@@ -18,7 +23,11 @@ console = Console()
 def confirmer(nom):
     """Demande à l’utilisateur s’il accepte d’écraser la fiche."""
     # À faire (étape 4).
-    raise NotImplementedError("Étape 4 : confirmer")
+    # raise NotImplementedError("Étape 4 : confirmer")
+    chemin = Path(nom)
+    if chemin.exists():
+        return Confirm.ask(f"Le fichier '{nom}' existe déja. Voulez-vous l'écraser")
+    return True
 
 
 def signaler(texte):
@@ -32,7 +41,9 @@ def lancer(verifier=False):
         configuration = charger_configuration()
         limites = charger_limites()
         service = client.creer_client(configuration, limites)
-    except ConfigurationInvalide as erreur:  # erreur : l’exception levée ; l’afficher donne son message
+    except (
+        ConfigurationInvalide
+    ) as erreur:  # erreur : l’exception levée ; l’afficher donne son message
         console.print(f"Erreur : {erreur}")
         return 1
     if verifier:
@@ -40,7 +51,9 @@ def lancer(verifier=False):
         return 0
 
     messages = conversation.nouvelle_conversation(limites)
-    console.print(f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}")
+    console.print(
+        f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}"
+    )
     while True:
         try:
             saisie = Prompt.ask("\nToi").strip()
@@ -54,11 +67,46 @@ def lancer(verifier=False):
             continue
         if not saisie:
             continue
+        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
+        if saisie.startswith("/joindre "):
+            parties = saisie.split(" ", 2)
+            if len(parties) >= 3:
+                nom_fiche = parties[1]
+                question_utilisateur = parties[2]
+                try:
+                    question = conversation.joindre_fiche(
+                        nom_fiche, question_utilisateur, limites
+                    )
+                    signaler("Le service réfléchit…")
+                    reponse = conversation.poser(
+                        question,
+                        messages,
+                        service,
+                        configuration["modele"],
+                        limites,
+                        confirmer,
+                        signaler,
+                    )
+                    console.print(Markdown(reponse))
+                except Exception as erreur:
+                    console.print(f"[red]Erreur : {erreur}[/red]")
+                continue
+            else:
+                console.print("[yellow]Usage : /joindre <fiche.md> <question>[/yellow]")
+                continue
         question = saisie
         # À faire (étape 2) : afficher les erreurs du service sans quitter.
-        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
-        signaler("Le service réfléchit…")
-        reponse = conversation.poser(
-            question, messages, service, configuration["modele"], limites, confirmer, signaler
-        )
-        console.print(Markdown(reponse))
+        try:
+            signaler("Le service réfléchit…")
+            reponse = conversation.poser(
+                question,
+                messages,
+                service,
+                configuration["modele"],
+                limites,
+                confirmer,
+                signaler,
+            )
+            console.print(Markdown(reponse))
+        except client.ServiceIndisponible as erreur:
+            console.print(f"[red]Erreur : {erreur}[/red]")
