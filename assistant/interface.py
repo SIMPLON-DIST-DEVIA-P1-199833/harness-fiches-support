@@ -4,21 +4,35 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.prompt import Prompt
 
-from assistant import client, conversation
-from assistant.configuration import ConfigurationInvalide, charger_configuration, charger_limites
+from assistant import client, conversation, outils
+from assistant.configuration import (
+    ConfigurationInvalide,
+    charger_configuration,
+    charger_limites,
+)
 
 AIDE = """Pose ta question, puis valide avec Entrée.
 /joindre <fiche.md> <question> : joindre une fiche à ta question
 /nouvelle : repartir d’une conversation vide
-/quitter : quitter"""
+/fiches : liste les fiches disponibles
+/quitter : quitter
+/aide : affiche cette aide
+"""
 
 console = Console()
+
+
+def afficher_aide(aide):
+    console.print(aide)
 
 
 def confirmer(nom):
     """Demande à l’utilisateur s’il accepte d’écraser la fiche."""
     # À faire (étape 4).
-    raise NotImplementedError("Étape 4 : confirmer")
+    saisie = ""
+    while saisie not in ("oui", "non"):
+        saisie = Prompt.ask(f"\nEst-ce OK pour réécrire {nom}? (oui/non)").strip().lower()
+    return saisie == "oui"
 
 
 def signaler(texte):
@@ -32,7 +46,9 @@ def lancer(verifier=False):
         configuration = charger_configuration()
         limites = charger_limites()
         service = client.creer_client(configuration, limites)
-    except ConfigurationInvalide as erreur:  # erreur : l’exception levée ; l’afficher donne son message
+    except (
+        ConfigurationInvalide
+    ) as erreur:  # erreur : l’exception levée ; l’afficher donne son message
         console.print(f"Erreur : {erreur}")
         return 1
     if verifier:
@@ -40,7 +56,9 @@ def lancer(verifier=False):
         return 0
 
     messages = conversation.nouvelle_conversation(limites)
-    console.print(f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}")
+    console.print(
+        f"Assistant des fiches support, modèle {configuration['modele']}.\n{AIDE}"
+    )
     while True:
         try:
             saisie = Prompt.ask("\nToi").strip()
@@ -50,15 +68,47 @@ def lancer(verifier=False):
             return 0
         if saisie == "/nouvelle":
             messages = conversation.nouvelle_conversation(limites)
+            console.clear()
+            afficher_aide(AIDE)
             signaler("Nouvelle conversation.")
             continue
+        if saisie == "/fiches":
+            console.print(conversation.lister_fiches(limites))
+            continue
+        if saisie == "/aide":
+            afficher_aide(AIDE)
+            continue
+        if saisie.startswith("/joindre"):
+            parties = saisie.split(maxsplit=2)
+            if len(parties) != 3:
+                console.print("Usage: /joindre <nomfiche.md> <question>")
+                continue
+            else:
+                try:
+                    saisie = conversation.joindre_fiche(parties[1], parties[2], limites)
+                    console.print(Markdown(saisie))
+                except outils.AccesRefuse as e:
+                    saisie = f"Accès refusé: {e}"
         if not saisie:
             continue
         question = saisie
-        # À faire (étape 2) : afficher les erreurs du service sans quitter.
-        # À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
+        # FAIT À faire (étape 2) : afficher les erreurs du service sans quitter.
+        # FAIT À faire (étape 3) : /joindre <fiche.md> <question> joint la fiche à la question.
         signaler("Le service réfléchit…")
-        reponse = conversation.poser(
-            question, messages, service, configuration["modele"], limites, confirmer, signaler
-        )
-        console.print(Markdown(reponse))
+        try:
+            reponse = conversation.poser(
+                question,
+                messages,
+                service,
+                configuration["modele"],
+                limites,
+                confirmer,
+                signaler,
+            )
+            console.print(Markdown(reponse))
+        except client.ServiceIndisponible as si:
+            reponse = f"Le service est indisponible ({si})"
+            console.print(Markdown(reponse), style="red on white")
+        except outils.AccesRefuse as ar:
+            reponse = f"Accès refusé ({ar})"
+            console.print(Markdown(reponse), style="blue on white")
