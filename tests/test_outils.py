@@ -188,11 +188,61 @@ def existing_fiche(limites):
 
 # Could have done it with helper functions instead of mock, but then we'd need a class or something to handle cases where we need to check the call
 # Mock essentially replaces the interactive confirmer from the interface
+def test_ecrire_fiche_valid_create_fiche(limites):
+    """Check new fiche is created with expected content"""
+    accept = Mock(return_value=True)
+    ecrire_fiche(NEW_FICHE, NEW_CONTENT, limites, accept)
+    new_fiche_path = limites["dossier_fiches"] / NEW_FICHE
+    # Will raise FileNotFound exception if file does not exist
+    assert new_fiche_path.read_text(encoding="utf-8") == NEW_CONTENT
+
+
+def test_ecrire_fiche_valid_create_fiche_no_confirmation_needed(limites):
+    """Check no confirmation is asked when new fiche is created"""
+    accept = Mock(return_value=True)
+    ecrire_fiche(NEW_FICHE, NEW_CONTENT, limites, accept)
+    # assert_not_called() > Mock method, AssertionError if mock was called
+    accept.assert_not_called()
+
+
+def test_ecrire_fiche_valid_replace_fiche_with_new_content(limites, existing_fiche):
+    """Check existing fiche is replaced when technician confirms"""
+    accept = Mock(return_value=True)
+    ecrire_fiche(EXISTING_FICHE, NEW_CONTENT, limites, accept)
+    assert existing_fiche.read_text(encoding="utf-8") == NEW_CONTENT
+
+
+def test_ecrire_fiche_valid_confirmation_asked_once(limites, existing_fiche):
+    """Check confirmation is asked once for a single fiche being overwritten"""
+    accept = Mock(return_value=True)
+    ecrire_fiche(EXISTING_FICHE, NEW_CONTENT, limites, accept)
+    accept.assert_called_once_with(EXISTING_FICHE)
+
+
+def test_ecrire_fiche_valid_content_at_size_limit(limites):
+    """Check content of new fiche at size limit is written fully"""
+    max_fiche_size_content = (limites["taille_max_ko"] * 1000) * "a"
+    accept = Mock(return_value=True)
+    ecrire_fiche(NEW_FICHE, max_fiche_size_content, limites, accept)
+    new_fiche_path = limites["dossier_fiches"] / NEW_FICHE
+    assert new_fiche_path.read_text(encoding="utf-8") == max_fiche_size_content
+
+
+def test_ecrire_fiche_fail_content_too_big(limites):
+    """Check content of new fiche above size limit is not written and does not create a new fiche"""
+    too_big_content = (limites["taille_max_ko"] * 1000 + 1) * "a"
+    accept = Mock(return_value=True)
+    new_fiche_path = limites["dossier_fiches"] / NEW_FICHE
+    with pytest.raises(AccesRefuse, match="too big"):
+        ecrire_fiche(NEW_FICHE, too_big_content, limites, accept)
+    assert not new_fiche_path.exists()
+
+
 def test_ecrire_fiche_fail_overwrite_declined(limites, existing_fiche):
     """Check existing fiche remains unchanged when technician declines"""
-    declined = Mock(return_value=False)
+    decline = Mock(return_value=False)
     with pytest.raises(AccesRefuse, match="declined"):
-        ecrire_fiche(EXISTING_FICHE, NEW_CONTENT, limites, declined)
+        ecrire_fiche(EXISTING_FICHE, NEW_CONTENT, limites, decline)
     assert existing_fiche.read_text(encoding="utf-8") == ORIGINAL_CONTENT
 
 
@@ -203,13 +253,3 @@ def test_ecrire_fiche_fail_outside_folder(limites, tmp_path):
     with pytest.raises(AccesRefuse, match="outside"):
         ecrire_fiche("../outside.md", NEW_CONTENT, limites, accept)
     assert not (tmp_path / "outside.md").exists()
-
-
-# TODO : tests
-# création
-# écrasement accepté
-# confirmation demandée pour la bonne fiche
-# écrasement refusé < DONE
-# hors du dossier < DONE
-# trop gros
-# à la limite
